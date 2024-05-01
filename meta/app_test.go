@@ -1,22 +1,22 @@
 package meta
 
 import (
-	"encoding/json"
-	"fmt"
-	"testing"
+    "encoding/json"
+    "fmt"
+    "testing"
 )
 
 func TestParseAppInfo(t *testing.T) {
-	var ii interface{}
-	err := json.Unmarshal([]byte(TestAppInfo), &ii)
-	if err != nil {
-		t.Error(err)
-	}
-	app, rc := ParseAppInfo(ii.(map[string]interface{}))
-	if rc != nil {
-		t.Error(rc)
-	}
-	fmt.Printf("app: %#v\n", app)
+    var ii interface{}
+    err := json.Unmarshal([]byte(TestAppInfo), &ii)
+    if err != nil {
+        t.Error(err)
+    }
+    app, rc := ParseAppInfo(ii.(map[string]interface{}))
+    if rc != nil {
+        t.Error(rc)
+    }
+    fmt.Printf("app: %#v\n", app)
 }
 
 var TestAppInfo = `
