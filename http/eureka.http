@@ -1,0 +1,107 @@
+
+@EurekaServer = http://192.168.138.130:20000/eureka
+@AppId = SPRINGBOOT278
+@InstanceId = 127.0.0.1:18080
+@VipAddress = springboot278
+@SvipAddress = springboot278
+
+### 注册新服务, 传递JSON或者XML格式参数内容，HTTP code为204时表示成功
+# POST   /apps/{AppId}
+POST {{EurekaServer}}/apps/{{AppId}} HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "instance": {
+    "instanceId": "127.0.0.1:18080",
+    "hostName": "127.0.0.1",
+    "app": "SPRINGBOOT278",
+    "ipAddr": "127.0.0.1",
+    "status": "UP",
+    "overriddenStatus": "UNKNOWN",
+    "port": {
+      "$": 18080,
+      "@enabled": "true"
+    },
+    "securePort": {
+      "$": 443,
+      "@enabled": "false"
+    },
+    "countryId": 1,
+    "dataCenterInfo": {
+      "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+      "name": "MyOwn"
+    },
+    "leaseInfo": {
+      "renewalIntervalInSecs": 30,
+      "durationInSecs": 90,
+      "registrationTimestamp": 1714441080811,
+      "lastRenewalTimestamp": 1714441080811,
+      "evictionTimestamp": 0,
+      "serviceUpTimestamp": 1714437265702
+    },
+    "metadata": {
+      "management.port": "18080",
+      "hello": "world"
+    },
+    "homePageUrl": "http://127.0.0.1:18080/",
+    "statusPageUrl": "http://127.0.0.1:18080/actuator/info",
+    "healthCheckUrl": "http://127.0.0.1:18080/actuator/health",
+    "vipAddress": "springboot278",
+    "secureVipAddress": "springboot278",
+    "isCoordinatingDiscoveryServer": "false",
+    "lastUpdatedTimestamp": "1714441080811",
+    "lastDirtyTimestamp": "1714437265630",
+    "actionType": "ADDED"
+  }
+}
+
+### 取消注册服务, HTTP code为200时表示成功
+# DELETE /apps/{AppId}/{InstanceId}
+DELETE {{EurekaServer}}/apps/{{AppId}}/{{InstanceId}} HTTP/1.1
+Accept: application/json
+
+### 发送服务心跳, HTTP code为200时表示成功
+# PUT    /apps/{AppId}/{InstanceId}
+PUT {{EurekaServer}}/apps/{{AppId}}/{{InstanceId}} HTTP/1.1
+Accept: application/json
+
+### 查询所有服务, HTTP code为200时表示成功，返回XML/JSON数据内容
+# GET    /apps
+GET {{EurekaServer}}/apps HTTP/1.1
+Accept: application/json
+
+### 查询指定AppId的服务列表, HTTP code为200时表示成功，返回XML/JSON数据内容
+# GET    /apps/{AppId}
+GET {{EurekaServer}}/apps/{{AppId}} HTTP/1.1
+Accept: application/json
+
+### 查询指定AppId&InstanceId, 获取指定AppId以及InstanceId的服务信息，HTTP code为200时表示成功，返回XML/JSON数据内容
+# GET    /apps/{AppId}/{InstanceId}
+GET {{EurekaServer}}/apps/{{AppId}}/{{InstanceId}} HTTP/1.1
+Accept: application/json
+
+### 查询指定InstanceId服务列表, 获取指定InstanceId的服务列表，HTTP code为200时表示成功，返回XML/JSON数据内容
+# GET    /instances/{InstanceId}
+GET {{EurekaServer}}/instances/{{InstanceId}} HTTP/1.1
+Accept: application/json
+
+### 变更服务状态, 服务上线、服务下线等状态变动，HTTP code为200时表示成功
+# PUT    /apps/{AppId}/{InstanceId}/status?value={DOWN|UP|OUT_OF_SERVICE}
+PUT {{EurekaServer}}/apps/{{AppId}}/{{InstanceId}}/status?value=UP HTTP/1.1
+Accept: application/json
+
+### 变更元数据, HTTP code为200时表示成功
+# PUT    /apps/{AppId}/{InstanceId}/metadata?key=value
+PUT {{EurekaServer}}/apps/{{AppId}}/{{InstanceId}}/metadata?hello=world HTTP/1.1
+Accept: application/json
+
+### 查询指定IP下的服务列表, HTTP code为200时表示成功
+# GET    /vips/{vipAddress}
+GET {{EurekaServer}}/vips/{{VipAddress}} HTTP/1.1
+Accept: application/json
+
+### 查询指定安全IP下的服务列表, HTTP code为200时表示成功
+# GET    /svips/{svipAddress}
+GET {{EurekaServer}}/svips/{{SvipAddress}} HTTP/1.1
+Accept: application/json
