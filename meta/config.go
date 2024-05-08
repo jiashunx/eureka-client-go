@@ -55,6 +55,10 @@ type InstanceConfig struct {
 
 // ClientConfig 客户端配置信息
 type ClientConfig struct {
+    // eureka server BasicAuth用户名
+    EurekaServerUsername string
+    // eureka server BasicAuth密码
+    EurekaServerPassword string
     // 读取eureka server的超时时间，默认：8s
     EurekaServerReadTimeoutSeconds int
     // 连接eureka server的超时时间，默认：5s
@@ -179,6 +183,8 @@ func NewEurekaConfig(ic *InstanceConfig, cc *ClientConfig) (*EurekaConfig, error
     if cc == nil {
         cc = &ClientConfig{}
     }
+    ncc.EurekaServerUsername = strings.TrimSpace(cc.EurekaServerUsername)
+    ncc.EurekaServerPassword = strings.TrimSpace(cc.EurekaServerPassword)
     ncc.EurekaServerReadTimeoutSeconds = cc.EurekaServerReadTimeoutSeconds
     if ncc.EurekaServerReadTimeoutSeconds <= 0 {
         ncc.EurekaServerReadTimeoutSeconds = 8
@@ -250,6 +256,7 @@ type HostInfo struct {
     IpAddress string
 }
 
+// GetLocalHostInfo 获取本机信息
 func GetLocalHostInfo() (*HostInfo, error) {
     hostname, err := os.Hostname()
     if err != nil {
@@ -265,6 +272,7 @@ func GetLocalHostInfo() (*HostInfo, error) {
     }, nil
 }
 
+// GetLocalIpv4Address 获取本机IP（ipv4）
 func GetLocalIpv4Address() (string, error) {
     address, err := net.InterfaceAddrs()
     if err != nil {
@@ -277,4 +285,18 @@ func GetLocalIpv4Address() (string, error) {
         }
     }
     return "", errors.New("ipv4 address not found")
+}
+
+// EurekaServer eureka server 连接信息
+type EurekaServer struct {
+    // 服务地址
+    ServiceUrl string
+    // BasicAuth用户名
+    Username string
+    // BasicAuth密码
+    Password string
+    // 读超时秒数
+    ReadTimeoutSeconds int
+    // 连接超时秒数
+    ConnectTimeoutSeconds int
 }
