@@ -2,6 +2,8 @@ package meta
 
 import (
     "encoding/json"
+    "fmt"
+    "github.com/google/uuid"
 )
 
 // DataCenterInfo 数据中心
@@ -25,9 +27,11 @@ func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err inte
 }
 
 // DefaultDataCenterInfo 默认数据中心信息
-var DefaultDataCenterInfo = &DataCenterInfo{
-    Class: "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
-    Name:  "MyOwn",
+func DefaultDataCenterInfo() *DataCenterInfo {
+    return &DataCenterInfo{
+        Class: "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+        Name:  "MyOwn",
+    }
 }
 
 // LeaseInfo 服务实例租约信息
@@ -58,10 +62,22 @@ func ParseLeaseInfo(m map[string]interface{}) (lease *LeaseInfo, err interface{}
     return lease, nil
 }
 
+// DefaultLeaseInfo 默认服务实例租约信息
+func DefaultLeaseInfo() *LeaseInfo {
+    return &LeaseInfo{
+        RenewalIntervalInSecs: DefaultLeaseRenewalIntervalInSeconds,
+        DurationInSecs:        DefaultLeaseExpirationDurationInSeconds,
+    }
+}
+
 // PortWrapper 端口信息
 type PortWrapper struct {
     Enabled string `json:"@enabled"`
     Port    int    `json:"$"`
+}
+
+func (wrapper *PortWrapper) IsEnabled() bool {
+    return wrapper.Enabled == StrTrue
 }
 
 // ParsePortWrapper 从map中解析端口信息
@@ -76,6 +92,22 @@ func ParsePortWrapper(m map[string]interface{}) (wrapper *PortWrapper, err inter
     wrapper.Enabled = m["@enabled"].(string)
     wrapper.Port = int(m["$"].(float64))
     return wrapper, nil
+}
+
+// DefaultNonSecurePortWrapper 默认http端口信息
+func DefaultNonSecurePortWrapper() *PortWrapper {
+    return &PortWrapper{
+        Enabled: fmt.Sprintf("%t", *DefaultNonSecurePortEnabled),
+        Port:    DefaultNonSecurePort,
+    }
+}
+
+// DefaultSecurePortWrapper 默认https端口信息
+func DefaultSecurePortWrapper() *PortWrapper {
+    return &PortWrapper{
+        Enabled: fmt.Sprintf("%t", *DefaultSecurePortEnabled),
+        Port:    DefaultSecurePort,
+    }
 }
 
 // InstanceStatus 服务实例状态
@@ -187,4 +219,80 @@ func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err in
     instance.LastDirtyTimestamp = m["lastDirtyTimestamp"].(string)
     instance.ActionType = ActionType(m["actionType"].(string))
     return instance, nil
+}
+
+func (instance *InstanceInfo) Check() error {
+    hostInfo, err := GetLocalHostInfo()
+    if err != nil {
+        return err
+    }
+    if instance.InstanceId == "" {
+        instance.InstanceId = uuid.New().String()
+    }
+    if instance.HostName == "" {
+        instance.HostName = hostInfo.Hostname
+    }
+    if instance.AppName == "" {
+        instance.AppName = DefaultAppName
+    }
+    if instance.IpAddr == "" {
+        instance.IpAddr = hostInfo.IpAddress
+    }
+    if instance.Status == "" {
+        instance.Status = Starting
+    }
+    if instance.OverriddenStatus == "" {
+        instance.OverriddenStatus = Unknown
+    }
+    if instance.SecurePort == nil {
+        instance.SecurePort = DefaultSecurePortWrapper()
+    }
+    if instance.Port == nil {
+        instance.Port = DefaultNonSecurePortWrapper()
+        if instance.SecurePort.IsEnabled() {
+            instance.Port.Enabled = StrFalse
+        }
+    }
+    instance.CountryId = 1
+    if instance.DataCenterInfo == nil {
+        instance.DataCenterInfo = DefaultDataCenterInfo()
+    }
+    if instance.LeaseInfo == nil {
+        instance.LeaseInfo = DefaultLeaseInfo()
+    }
+    if instance.Metadata == nil {
+        instance.Metadata = make(map[string]string)
+    }
+    protocol, ipAddr, port := HttpProtocol, instance.IpAddr, instance.Port.Port
+    if instance.SecurePort.IsEnabled() {
+        protocol, ipAddr, port = HttpsProtocol, instance.IpAddr, instance.SecurePort.Port
+    }
+    if instance.StatusPageUrl == "" {
+        instance.StatusPageUrl = fmt.Sprintf("%s%s:%d%s", protocol, ipAddr, port, DefaultStatusPageUrlPath)
+    }
+    if instance.HomePageUrl == "" {
+        instance.HomePageUrl = fmt.Sprintf("%s%s:%d%s", protocol, ipAddr, port, DefaultHomePageUrlPath)
+    }
+    if instance.HealthCheckUrl == "" {
+        instance.HealthCheckUrl = fmt.Sprintf("%s%s:%d%s", protocol, ipAddr, port, DefaultHealthCheckUrlPath)
+    }
+    if instance.VipAddress == "" {
+        instance.VipAddress = DefaultVirtualHostname
+    }
+    if instance.SecureVipAddress == "" {
+        instance.SecureVipAddress = DefaultSecureVirtualHostname
+    }
+    if instance.IsCoordinatingDiscoveryServer == "" {
+        instance.IsCoordinatingDiscoveryServer = StrFalse
+    }
+    // if instance.LastUpdatedTimestamp == "" {
+    //     instance.LastUpdatedTimestamp = fmt.Sprintf("%d", time.Now().UnixMilli())
+    // }
+    // if instance.LastDirtyTimestamp == "" {
+    //     instance.LastDirtyTimestamp = fmt.Sprintf("%d", time.Now().UnixMilli())
+    // }
+    if instance.ActionType == "" {
+        instance.ActionType = Added
+    }
+    return nil
 }
