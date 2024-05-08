@@ -11,6 +11,8 @@ import (
 var (
     True                                                 = true
     False                                                = false
+    StrTrue                                              = "true"
+    StrFalse                                             = "false"
     DefaultAppName                                       = "unknown"
     DefaultPreferIpAddress                               = &False
     DefaultInstanceEnabledOnIt                           = &False
@@ -288,20 +290,26 @@ type HostInfo struct {
     IpAddress string
 }
 
+// LocalHostInfo 本机信息缓存
+var LocalHostInfo *HostInfo
+
 // GetLocalHostInfo 获取本机信息
 func GetLocalHostInfo() (*HostInfo, error) {
-    hostname, err := os.Hostname()
-    if err != nil {
-        return nil, errors.New("获取本机hostname失败, 原因: " + err.Error())
+    if LocalHostInfo == nil {
+        hostname, err := os.Hostname()
+        if err != nil {
+            return nil, errors.New("获取本机hostname失败, 原因: " + err.Error())
+        }
+        ipAddress, err := GetLocalIpv4Address()
+        if err != nil {
+            return nil, errors.New("获取本机IP失败, 原因: " + err.Error())
+        }
+        LocalHostInfo = &HostInfo{
+            hostname,
+            ipAddress,
+        }
     }
-    ipAddress, err := GetLocalIpv4Address()
-    if err != nil {
-        return nil, errors.New("获取本机IP失败, 原因: " + err.Error())
-    }
-    return &HostInfo{
-        hostname,
-        ipAddress,
-    }, nil
+    return LocalHostInfo, nil
 }
 
 // GetLocalIpv4Address 获取本机IP(ipv4)
