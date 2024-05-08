@@ -1,12 +1,59 @@
 package http
 
-import "github.com/jiashunx/eureka-client-go/meta"
+import (
+    "encoding/json"
+    "fmt"
+    "github.com/jiashunx/eureka-client-go/meta"
+    "math"
+    "net/http"
+    "strings"
+    "time"
+)
 
-// 与eureka server通讯的接口处理
+// DoRequest 与eureka server通讯处理
+func DoRequest(server *meta.EurekaServer, method string, uri string, payload []byte) (*http.Response, error) {
+    method = strings.TrimSpace(method)
+    url := server.ServiceUrl + strings.TrimSpace(uri)
+    body := ""
+    if payload != nil {
+        body = strings.TrimSpace(string(payload))
+    }
+    request, err := http.NewRequest(method, url, strings.NewReader(body))
+    if err != nil {
+        return nil, err
+    }
+    if server.Username != "" && server.Password != "" {
+        request.SetBasicAuth(server.Username, server.Password)
+    }
+    request.Header.Set("Accept", "application/json")
+    if body != "" {
+        request.Header.Set("Content-Type", "application/json")
+    }
+    client := http.DefaultClient
+    if server.ReadTimeoutSeconds > 0 || server.ConnectTimeoutSeconds > 0 {
+        seconds := time.Duration(int64(math.Max(float64(server.ReadTimeoutSeconds), float64(server.ConnectTimeoutSeconds))))
+        client = &http.Client{Timeout: seconds * time.Second}
+    }
+    return client.Do(request)
+}
 
 // Register 注册新服务
 func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) (int, error) {
-    return 0, nil
+    err := instance.Check()
+    if err != nil {
+        return 0, err
+    }
+    body := make(map[string]*meta.InstanceInfo)
+    body["instance"] = instance
+    payload, err := json.Marshal(body)
+    if err != nil {
+        return 0, err
+    }
+    response, err := DoRequest(server, "POST", fmt.Sprintf("/apps/%s", instance.AppName), payload)
+    if err != nil {
+        return 0, err
+    }
+    return response.StatusCode, nil
 }
 
 // SimpleRegister 注册新服务
@@ -16,7 +63,11 @@ func SimpleRegister(serviceUrl string, instance *meta.InstanceInfo) (int, error)
 
 // UnRegister 取消注册服务
 func UnRegister(server *meta.EurekaServer, appName, instanceId string) (int, error) {
-    return 0, nil
+    response, err := DoRequest(server, "DELETE", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
+    if err != nil {
+        return 0, err
+    }
+    return response.StatusCode, nil
 }
 
 // SimpleUnRegister 取消注册服务
@@ -26,7 +77,11 @@ func SimpleUnRegister(serviceUrl, appName, instanceId string) (int, error) {
 
 // Heartbeat 发送服务心跳
 func Heartbeat(server *meta.EurekaServer, appName, instanceId string) (int, error) {
-    return 0, nil
+    response, err := DoRequest(server, "PUT", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
+    if err != nil {
+        return 0, err
+    }
+    return response.StatusCode, nil
 }
 
 // SimpleHeartbeat 发送服务心跳
