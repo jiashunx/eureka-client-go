@@ -20,6 +20,7 @@ type EurekaRequest struct {
 type EurekaResponse struct {
     HttpRequest  *http.Request
     HttpResponse *http.Response
+    Body         string
     Request      *EurekaRequest
     Error        error
     Responses    []*EurekaResponse

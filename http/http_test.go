@@ -1,6 +1,7 @@
 package http
 
 import (
+    "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
     "github.com/stretchr/testify/assert"
     "testing"
@@ -26,6 +27,8 @@ func TestRegister(t *testing.T) {
     response := SimpleRegister(serviceUrl, instance)
     ast.Nilf(response.Error, "Register处理失败，失败原因：%s", response.Error)
     ast.Equal(204, response.StatusCode)
+    fmt.Println("Register请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("Register响应报文:" + response.CommonResponse.Response.Body)
 }
 
 func TestHeartbeat(t *testing.T) {
@@ -33,6 +36,17 @@ func TestHeartbeat(t *testing.T) {
     response := SimpleHeartbeat(serviceUrl, instance.AppName, instance.InstanceId)
     ast.Nilf(response.Error, "Heartbeat处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
+    fmt.Println("Heartbeat请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("Heartbeat响应报文:" + response.CommonResponse.Response.Body)
+}
+
+func TestQueryApps(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQueryApps(serviceUrl)
+    ast.Nilf(response.Error, "QueryApps处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QueryApps请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("QueryApps响应报文:" + response.CommonResponse.Response.Body)
 }
 
 func TestChangeStatus(t *testing.T) {
@@ -40,6 +54,8 @@ func TestChangeStatus(t *testing.T) {
     response := SimpleChangeStatus(serviceUrl, instance.AppName, instance.InstanceId, meta.StatusOutOfService)
     ast.Nilf(response.Error, "ChangeStatus处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
+    fmt.Println("ChangeStatus请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("ChangeStatus响应报文:" + response.CommonResponse.Response.Body)
 }
 
 func TestModifyMetadata(t *testing.T) {
@@ -47,6 +63,8 @@ func TestModifyMetadata(t *testing.T) {
     response := SimpleModifyMetadata(serviceUrl, instance.AppName, instance.InstanceId, "hello", "world")
     ast.Nilf(response.Error, "ModifyMetadata处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
+    fmt.Println("ModifyMetadata请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("ModifyMetadata响应报文:" + response.CommonResponse.Response.Body)
 }
 
 func TestUnRegister(t *testing.T) {
@@ -54,4 +72,6 @@ func TestUnRegister(t *testing.T) {
     response := SimpleUnRegister(serviceUrl, instance.AppName, instance.InstanceId)
     ast.Nilf(response.Error, "UnRegister处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
+    fmt.Println("UnRegister请求报文:" + response.CommonResponse.Response.Request.Body)
+    fmt.Println("UnRegister响应报文:" + response.CommonResponse.Response.Body)
 }

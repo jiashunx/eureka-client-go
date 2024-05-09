@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
+    "io/ioutil"
     "math"
     "net/http"
     "net/url"
@@ -71,6 +72,14 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
         response.HttpResponse = httpResponse
         response.Error = err
         responses = append(responses, response)
+        if response.Error == nil {
+            var body []byte
+            body, response.Error = ioutil.ReadAll(httpResponse.Body)
+            if response.Error == nil {
+                response.Body = string(body)
+            }
+            _ = httpResponse.Body.Close()
+        }
         if response.Error == nil && httpResponse.StatusCode == expect {
             break
         }
@@ -86,7 +95,11 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
             Responses:    responses,
         }
     }
-    return responses[len(responses)-1]
+    response := responses[len(responses)-1]
+    if response.Error == nil && response.HttpResponse.StatusCode != expect {
+        response.Error = errors.New(fmt.Sprintf("请求响应码错误, 预期: %d, 实际: %d", expect, response.HttpResponse.StatusCode))
+    }
+    return response
 }
 
 // Register 注册新服务
@@ -141,7 +154,12 @@ func SimpleHeartbeat(serviceUrl, appName, instanceId string) *HeartbeatResponse 
 
 // QueryApps 查询所有服务列表
 func QueryApps(server *meta.EurekaServer) *QueryAppsResponse {
-    return nil
+    ret := &QueryAppsResponse{&CommonResponse{}, make([]*meta.AppInfo, 0)}
+    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "GET", "/apps", nil))
+    if ret.Error != nil {
+        return ret
+    }
+    return ret
 }
 
 // SimpleQueryApps 查询所有服务列表
