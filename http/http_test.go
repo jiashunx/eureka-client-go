@@ -23,21 +23,35 @@ var instance = &meta.InstanceInfo{AppName: "test", InstanceId: "hello"}
 
 func TestRegister(t *testing.T) {
     ast := assert.New(t)
-    code, err := SimpleRegister(serviceUrl, instance)
-    ast.Nilf(err, "Register处理失败，失败原因：%s", err)
-    ast.Equal(204, code)
+    response := SimpleRegister(serviceUrl, instance)
+    ast.Nilf(response.Error, "Register处理失败，失败原因：%s", response.Error)
+    ast.Equal(204, response.StatusCode)
 }
 
 func TestHeartbeat(t *testing.T) {
     ast := assert.New(t)
-    code, err := SimpleHeartbeat(serviceUrl, instance.AppName, instance.InstanceId)
-    ast.Nilf(err, "Heartbeat处理失败，失败原因：%s", err)
-    ast.Equal(200, code)
+    response := SimpleHeartbeat(serviceUrl, instance.AppName, instance.InstanceId)
+    ast.Nilf(response.Error, "Heartbeat处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+}
+
+func TestChangeStatus(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleChangeStatus(serviceUrl, instance.AppName, instance.InstanceId, meta.OutOfService)
+    ast.Nilf(response.Error, "ChangeStatus处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+}
+
+func TestModifyMetadata(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleModifyMetadata(serviceUrl, instance.AppName, instance.InstanceId, "hello", "world")
+    ast.Nilf(response.Error, "ModifyMetadata处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
 }
 
 func TestUnRegister(t *testing.T) {
     ast := assert.New(t)
-    code, err := SimpleUnRegister(serviceUrl, instance.AppName, instance.InstanceId)
-    ast.Nilf(err, "UnRegister处理失败，失败原因：%s", err)
-    ast.Equal(200, code)
+    response := SimpleUnRegister(serviceUrl, instance.AppName, instance.InstanceId)
+    ast.Nilf(response.Error, "UnRegister处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
 }
