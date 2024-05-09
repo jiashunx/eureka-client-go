@@ -26,70 +26,85 @@ type EurekaResponse struct {
     Responses    []*EurekaResponse
 }
 
-// CommonResponse 通用请求响应模型
-type CommonResponse struct {
+// RegisterResponse 注册新服务请求响应
+type RegisterResponse struct {
     Response   *EurekaResponse
     StatusCode int
     Error      error
 }
 
-// RegisterResponse 注册新服务请求响应
-type RegisterResponse struct {
-    *CommonResponse
-}
-
 // UnRegisterResponse 取消注册服务请求响应
 type UnRegisterResponse struct {
-    *CommonResponse
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
 }
 
 // HeartbeatResponse 发送服务心跳请求响应
 type HeartbeatResponse struct {
-    *CommonResponse
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
 }
 
 // QueryAppsResponse 查询所有服务列表请求响应
 type QueryAppsResponse struct {
-    *CommonResponse
-    Apps []*meta.AppInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Apps       []*meta.AppInfo
 }
 
 // QueryAppResponse 查询指定appName的服务实例列表请求响应
 type QueryAppResponse struct {
-    *CommonResponse
-    Instances []*meta.InstanceInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Instances  []*meta.InstanceInfo
 }
 
 // QueryAppInstanceResponse 查询指定appName&InstanceId服务实例请求响应
 type QueryAppInstanceResponse struct {
-    *CommonResponse
-    Instance *meta.InstanceInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Instance   *meta.InstanceInfo
 }
 
 // QueryInstanceResponse 查询指定InstanceId服务实例请求响应
 type QueryInstanceResponse struct {
-    *CommonResponse
-    Instance *meta.InstanceInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Instance   *meta.InstanceInfo
 }
 
 // ChangeStatusResponse 变更服务状态请求响应
 type ChangeStatusResponse struct {
-    *CommonResponse
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
 }
 
 // ModifyMetadataResponse 变更元数据请求响应
 type ModifyMetadataResponse struct {
-    *CommonResponse
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
 }
 
 // QueryVipAppsResponse 查询指定IP下的服务列表请求响应
 type QueryVipAppsResponse struct {
-    *CommonResponse
-    Apps []*meta.AppInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Apps       []*meta.AppInfo
 }
 
 // QuerySvipAppsResponse 查询指定安全IP下的服务列表请求响应
 type QuerySvipAppsResponse struct {
-    *CommonResponse
-    Apps []*meta.AppInfo
+    Response   *EurekaResponse
+    StatusCode int
+    Error      error
+    Apps       []*meta.AppInfo
 }

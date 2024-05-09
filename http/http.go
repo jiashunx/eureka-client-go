@@ -104,7 +104,7 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
 
 // Register 注册新服务
 func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *RegisterResponse {
-    ret := &RegisterResponse{&CommonResponse{}}
+    ret := &RegisterResponse{}
     ret.Error = instance.Check()
     if ret.Error != nil {
         return ret
@@ -117,7 +117,13 @@ func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *RegisterR
         return ret
     }
     requestUrl := fmt.Sprintf("/apps/%s", instance.AppName)
-    AssignCommonResponse(ret.CommonResponse, DoRequest(204, server, "POST", requestUrl, payload))
+    ret.Response = DoRequest(204, server, "POST", requestUrl, payload)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
     return ret
 }
 
@@ -128,9 +134,15 @@ func SimpleRegister(serviceUrl string, instance *meta.InstanceInfo) *RegisterRes
 
 // UnRegister 取消注册服务
 func UnRegister(server *meta.EurekaServer, appName, instanceId string) *UnRegisterResponse {
-    ret := &UnRegisterResponse{&CommonResponse{}}
+    ret := &UnRegisterResponse{}
     requestUrl := fmt.Sprintf("/apps/%s/%s", appName, instanceId)
-    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "DELETE", requestUrl, nil))
+    ret.Response = DoRequest(200, server, "DELETE", requestUrl, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
     return ret
 }
 
@@ -141,9 +153,15 @@ func SimpleUnRegister(serviceUrl, appName, instanceId string) *UnRegisterRespons
 
 // Heartbeat 发送服务心跳
 func Heartbeat(server *meta.EurekaServer, appName, instanceId string) *HeartbeatResponse {
-    ret := &HeartbeatResponse{&CommonResponse{}}
+    ret := &HeartbeatResponse{}
     requestUrl := fmt.Sprintf("/apps/%s/%s", appName, instanceId)
-    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "PUT", requestUrl, nil))
+    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
     return ret
 }
 
@@ -154,10 +172,13 @@ func SimpleHeartbeat(serviceUrl, appName, instanceId string) *HeartbeatResponse 
 
 // QueryApps 查询所有服务列表
 func QueryApps(server *meta.EurekaServer) *QueryAppsResponse {
-    ret := &QueryAppsResponse{&CommonResponse{}, make([]*meta.AppInfo, 0)}
-    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "GET", "/apps", nil))
-    if ret.Error != nil {
-        return ret
+    ret := &QueryAppsResponse{Apps: make([]*meta.AppInfo, 0)}
+    ret.Response = DoRequest(200, server, "GET", "/apps", nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
     }
     return ret
 }
@@ -199,9 +220,15 @@ func SimpleQueryInstance(serviceUrl, instanceId string) *QueryInstanceResponse {
 
 // ChangeStatus 变更服务状态
 func ChangeStatus(server *meta.EurekaServer, appName, instanceId string, status meta.InstanceStatus) *ChangeStatusResponse {
-    ret := &ChangeStatusResponse{&CommonResponse{}}
+    ret := &ChangeStatusResponse{}
     requestUrl := fmt.Sprintf("/apps/%s/%s/status?value=%s", appName, instanceId, string(status))
-    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "PUT", requestUrl, nil))
+    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
     return ret
 }
 
@@ -212,9 +239,15 @@ func SimpleChangeStatus(serviceUrl, appName, instanceId string, status meta.Inst
 
 // ModifyMetadata 变更元数据
 func ModifyMetadata(server *meta.EurekaServer, appName, instanceId, key, value string) *ModifyMetadataResponse {
-    ret := &ModifyMetadataResponse{&CommonResponse{}}
+    ret := &ModifyMetadataResponse{}
     requestUrl := fmt.Sprintf("/apps/%s/%s/metadata?%s=%s", appName, instanceId, key, value)
-    AssignCommonResponse(ret.CommonResponse, DoRequest(200, server, "PUT", requestUrl, nil))
+    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
     return ret
 }
 
@@ -241,16 +274,4 @@ func QuerySvipApps(server *meta.EurekaServer, svipAddress string) *QuerySvipApps
 // SimpleQuerySvipApps 查询指定安全IP下的服务列表
 func SimpleQuerySvipApps(serviceUrl, svipAddress string) *QuerySvipAppsResponse {
     return QuerySvipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, svipAddress)
-}
-
-// AssignCommonResponse 针对 *CommonResponse 进行赋值处理
-func AssignCommonResponse(ret *CommonResponse, response *EurekaResponse) *CommonResponse {
-    ret.Response = response
-    if ret.Response != nil {
-        ret.Error = ret.Response.Error
-        if ret.Response.HttpResponse != nil {
-            ret.StatusCode = ret.Response.HttpResponse.StatusCode
-        }
-    }
-    return ret
 }
