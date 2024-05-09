@@ -14,14 +14,13 @@ import (
 
 // EurekaRequest 与eureka server通讯请求模型
 type EurekaRequest struct {
-    ServiceUrl    string
-    Username      string
-    Password      string
-    Authorization string
-    Method        string
-    RequestUrl    string
-    RequestUri    string
-    Body          string
+    ServiceUrl   string
+    AuthUsername string
+    AuthPassword string
+    Method       string
+    RequestUrl   string
+    RequestUri   string
+    Body         string
 }
 
 // EurekaResponse 与eureka server通讯响应（包含同批次所有通讯响应）
@@ -39,14 +38,13 @@ func DoRequest(server *meta.EurekaServer, expect int, method string, uri string,
     // 遍历eureka server服务地址，循环发请求直至成功
     for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
         request := &EurekaRequest{
-            ServiceUrl:    serviceUrl,
-            Username:      server.Username,
-            Password:      server.Password,
-            Authorization: "",
-            Method:        method,
-            RequestUrl:    "",
-            RequestUri:    uri,
-            Body:          "",
+            ServiceUrl:   serviceUrl,
+            AuthUsername: "",
+            AuthPassword: "",
+            Method:       method,
+            RequestUrl:   "",
+            RequestUri:   uri,
+            Body:         "",
         }
         response := &EurekaResponse{Request: request}
         if payload != nil {
@@ -57,6 +55,14 @@ func DoRequest(server *meta.EurekaServer, expect int, method string, uri string,
             response.Error = err
             responses = append(responses, response)
             continue
+        }
+        if URL.User != nil && URL.User.String() != "" {
+            password, _ := URL.User.Password()
+            request.AuthUsername = URL.User.Username()
+            request.AuthPassword = password
+        } else if server.Username != "" {
+            request.AuthUsername = server.Username
+            request.AuthPassword = server.Password
         }
         request.RequestUrl = URL.Scheme + "://" + URL.Hostname() + ":" + URL.Port() + URL.Path + strings.TrimSpace(uri)
         if URL.Port() == "" {
@@ -69,13 +75,9 @@ func DoRequest(server *meta.EurekaServer, expect int, method string, uri string,
             responses = append(responses, response)
             continue
         }
-        if URL.User != nil && URL.User.String() != "" {
-            password, _ := URL.User.Password()
-            httpRequest.SetBasicAuth(URL.User.Username(), password)
-        } else if server.Username != "" && server.Password != "" {
-            httpRequest.SetBasicAuth(server.Username, server.Password)
+        if request.AuthUsername != "" {
+            httpRequest.SetBasicAuth(request.AuthUsername, request.AuthPassword)
         }
-        request.Authorization = httpRequest.Header.Get("Authorization")
         httpRequest.Header.Set("Accept", "application/json")
         if request.Body != "" {
             httpRequest.Header.Set("Content-Type", "application/json")
