@@ -1,16 +1,21 @@
 package meta
 
+import (
+    "errors"
+    "fmt"
+)
+
 type AppInfo struct {
     Name      string          `json:"name"`
     Instances []*InstanceInfo `json:"instance"`
 }
 
 // ParseAppInfo 从map中解析服务实例信息
-func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err interface{}) {
+func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             app = nil
-            err = rc
+            err = errors.New(fmt.Sprintf("%v", rc))
         }
     }()
     app = &AppInfo{}

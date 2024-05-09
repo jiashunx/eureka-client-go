@@ -2,6 +2,7 @@ package meta
 
 import (
     "encoding/json"
+    "errors"
     "fmt"
     "github.com/google/uuid"
 )
@@ -13,11 +14,11 @@ type DataCenterInfo struct {
 }
 
 // ParseDataCenterInfo 从map中解析数据中心信息
-func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err interface{}) {
+func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             dc = nil
-            err = rc
+            err = errors.New(fmt.Sprintf("%v", rc))
         }
     }()
     dc = &DataCenterInfo{}
@@ -45,11 +46,11 @@ type LeaseInfo struct {
 }
 
 // ParseLeaseInfo 从map中解析服务实例租约信息
-func ParseLeaseInfo(m map[string]interface{}) (lease *LeaseInfo, err interface{}) {
+func ParseLeaseInfo(m map[string]interface{}) (lease *LeaseInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             lease = nil
-            err = rc
+            err = errors.New(fmt.Sprintf("%v", rc))
         }
     }()
     lease = &LeaseInfo{}
@@ -81,11 +82,11 @@ func (wrapper *PortWrapper) IsEnabled() bool {
 }
 
 // ParsePortWrapper 从map中解析端口信息
-func ParsePortWrapper(m map[string]interface{}) (wrapper *PortWrapper, err interface{}) {
+func ParsePortWrapper(m map[string]interface{}) (wrapper *PortWrapper, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             wrapper = nil
-            err = rc
+            err = errors.New(fmt.Sprintf("%v", rc))
         }
     }()
     wrapper = &PortWrapper{}
@@ -174,11 +175,11 @@ func (instance *InstanceInfo) ToJson() ([]byte, error) {
 }
 
 // ParseInstanceInfo 从map中解析服务实例信息
-func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err interface{}) {
+func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             instance = nil
-            err = rc
+            err = errors.New(fmt.Sprintf("%v", rc))
         }
     }()
     instance = &InstanceInfo{}
