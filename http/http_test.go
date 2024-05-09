@@ -37,7 +37,7 @@ func TestHeartbeat(t *testing.T) {
 
 func TestChangeStatus(t *testing.T) {
     ast := assert.New(t)
-    response := SimpleChangeStatus(serviceUrl, instance.AppName, instance.InstanceId, meta.OutOfService)
+    response := SimpleChangeStatus(serviceUrl, instance.AppName, instance.InstanceId, meta.StatusOutOfService)
     ast.Nilf(response.Error, "ChangeStatus处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
 }

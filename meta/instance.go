@@ -114,11 +114,11 @@ func DefaultSecurePortWrapper() *PortWrapper {
 type InstanceStatus string
 
 const (
-    Up           InstanceStatus = "UP"
-    Down         InstanceStatus = "DOWN"
-    Starting     InstanceStatus = "STARTING"
-    OutOfService InstanceStatus = "OUT_OF_SERVICE"
-    Unknown      InstanceStatus = "UNKNOWN"
+    StatusUp           InstanceStatus = "UP"
+    StatusDown         InstanceStatus = "DOWN"
+    StatusStarting     InstanceStatus = "STARTING"
+    StatusOutOfService InstanceStatus = "OUT_OF_SERVICE"
+    StatusUnknown      InstanceStatus = "UNKNOWN"
 )
 
 // PortType 端口类型
@@ -239,10 +239,10 @@ func (instance *InstanceInfo) Check() error {
         instance.IpAddr = hostInfo.IpAddress
     }
     if instance.Status == "" {
-        instance.Status = Starting
+        instance.Status = StatusStarting
     }
     if instance.OverriddenStatus == "" {
-        instance.OverriddenStatus = Unknown
+        instance.OverriddenStatus = StatusUnknown
     }
     if instance.SecurePort == nil {
         instance.SecurePort = DefaultSecurePortWrapper()
