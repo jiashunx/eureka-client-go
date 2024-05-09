@@ -103,8 +103,8 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
 }
 
 // Register 注册新服务
-func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *RegisterResponse {
-    ret := &RegisterResponse{}
+func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *CommonResponse {
+    ret := &CommonResponse{}
     ret.Error = instance.Check()
     if ret.Error != nil {
         return ret
@@ -117,131 +117,122 @@ func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *RegisterR
         return ret
     }
     requestUrl := fmt.Sprintf("/apps/%s", instance.AppName)
-    ret.Response = DoRequest(204, server, "POST", requestUrl, payload)
-    if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
-    }
-    if ret.Response.HttpResponse != nil {
-        ret.StatusCode = ret.Response.HttpResponse.StatusCode
-    }
-    return ret
+    return commonHttp(204, server, "POST", requestUrl, payload)
 }
 
 // SimpleRegister 注册新服务
-func SimpleRegister(serviceUrl string, instance *meta.InstanceInfo) *RegisterResponse {
+func SimpleRegister(serviceUrl string, instance *meta.InstanceInfo) *CommonResponse {
     return Register(&meta.EurekaServer{ServiceUrl: serviceUrl}, instance)
 }
 
 // UnRegister 取消注册服务
-func UnRegister(server *meta.EurekaServer, appName, instanceId string) *UnRegisterResponse {
-    ret := &UnRegisterResponse{}
+func UnRegister(server *meta.EurekaServer, appName, instanceId string) *CommonResponse {
     requestUrl := fmt.Sprintf("/apps/%s/%s", appName, instanceId)
-    ret.Response = DoRequest(200, server, "DELETE", requestUrl, nil)
-    if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
-    }
-    if ret.Response.HttpResponse != nil {
-        ret.StatusCode = ret.Response.HttpResponse.StatusCode
-    }
-    return ret
+    return commonHttp(200, server, "DELETE", requestUrl, nil)
 }
 
 // SimpleUnRegister 取消注册服务
-func SimpleUnRegister(serviceUrl, appName, instanceId string) *UnRegisterResponse {
+func SimpleUnRegister(serviceUrl, appName, instanceId string) *CommonResponse {
     return UnRegister(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId)
 }
 
 // Heartbeat 发送服务心跳
-func Heartbeat(server *meta.EurekaServer, appName, instanceId string) *HeartbeatResponse {
-    ret := &HeartbeatResponse{}
+func Heartbeat(server *meta.EurekaServer, appName, instanceId string) *CommonResponse {
     requestUrl := fmt.Sprintf("/apps/%s/%s", appName, instanceId)
-    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
-    if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
-    }
-    if ret.Response.HttpResponse != nil {
-        ret.StatusCode = ret.Response.HttpResponse.StatusCode
-    }
-    return ret
+    return commonHttp(200, server, "PUT", requestUrl, nil)
 }
 
 // SimpleHeartbeat 发送服务心跳
-func SimpleHeartbeat(serviceUrl, appName, instanceId string) *HeartbeatResponse {
+func SimpleHeartbeat(serviceUrl, appName, instanceId string) *CommonResponse {
     return Heartbeat(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId)
 }
 
 // QueryApps 查询所有服务列表
-func QueryApps(server *meta.EurekaServer) *QueryAppsResponse {
-    ret := &QueryAppsResponse{Apps: make([]*meta.AppInfo, 0)}
-    ret.Response = DoRequest(200, server, "GET", "/apps", nil)
-    if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
-    }
-    if ret.Response.HttpResponse != nil {
-        ret.StatusCode = ret.Response.HttpResponse.StatusCode
-    }
-    return ret
+func QueryApps(server *meta.EurekaServer) *AppsResponse {
+    return getApps(server, "/apps")
 }
 
 // SimpleQueryApps 查询所有服务列表
-func SimpleQueryApps(serviceUrl string) *QueryAppsResponse {
+func SimpleQueryApps(serviceUrl string) *AppsResponse {
     return QueryApps(&meta.EurekaServer{ServiceUrl: serviceUrl})
 }
 
 // QueryApp 查询指定appName的服务实例列表
-func QueryApp(server *meta.EurekaServer, appName string) *QueryAppResponse {
-    return nil
+func QueryApp(server *meta.EurekaServer, appName string) *InstancesResponse {
+    return getInstances(server, fmt.Sprintf("/apps/%s", appName))
 }
 
 // SimpleQueryApp 查询指定appName的服务实例列表
-func SimpleQueryApp(serviceUrl, appName string) *QueryAppResponse {
+func SimpleQueryApp(serviceUrl, appName string) *InstancesResponse {
     return QueryApp(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName)
 }
 
 // QueryAppInstance 查询指定appName&InstanceId服务实例
-func QueryAppInstance(server *meta.EurekaServer, appName, instanceId string) *QueryAppInstanceResponse {
-    return nil
+func QueryAppInstance(server *meta.EurekaServer, appName, instanceId string) *InstanceResponse {
+    return getInstance(server, fmt.Sprintf("/apps/%s/%s", appName, instanceId))
 }
 
 // SimpleQueryAppInstance 查询指定appName&InstanceId服务实例
-func SimpleQueryAppInstance(serviceUrl, appName, instanceId string) *QueryAppInstanceResponse {
+func SimpleQueryAppInstance(serviceUrl, appName, instanceId string) *InstanceResponse {
     return QueryAppInstance(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId)
 }
 
 // QueryInstance 查询指定InstanceId服务实例
-func QueryInstance(server *meta.EurekaServer, instanceId string) *QueryInstanceResponse {
-    return nil
+func QueryInstance(server *meta.EurekaServer, instanceId string) *InstanceResponse {
+    return getInstance(server, fmt.Sprintf("/instances/%s", instanceId))
 }
 
 // SimpleQueryInstance 查询指定InstanceId服务实例
-func SimpleQueryInstance(serviceUrl, instanceId string) *QueryInstanceResponse {
+func SimpleQueryInstance(serviceUrl, instanceId string) *InstanceResponse {
     return QueryInstance(&meta.EurekaServer{ServiceUrl: serviceUrl}, instanceId)
 }
 
 // ChangeStatus 变更服务状态
-func ChangeStatus(server *meta.EurekaServer, appName, instanceId string, status meta.InstanceStatus) *ChangeStatusResponse {
-    ret := &ChangeStatusResponse{}
+func ChangeStatus(server *meta.EurekaServer, appName, instanceId string, status meta.InstanceStatus) *CommonResponse {
     requestUrl := fmt.Sprintf("/apps/%s/%s/status?value=%s", appName, instanceId, string(status))
-    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
-    if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
-    }
-    if ret.Response.HttpResponse != nil {
-        ret.StatusCode = ret.Response.HttpResponse.StatusCode
-    }
-    return ret
+    return commonHttp(200, server, "PUT", requestUrl, nil)
 }
 
 // SimpleChangeStatus 变更服务状态
-func SimpleChangeStatus(serviceUrl, appName, instanceId string, status meta.InstanceStatus) *ChangeStatusResponse {
+func SimpleChangeStatus(serviceUrl, appName, instanceId string, status meta.InstanceStatus) *CommonResponse {
     return ChangeStatus(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, status)
 }
 
 // ModifyMetadata 变更元数据
-func ModifyMetadata(server *meta.EurekaServer, appName, instanceId, key, value string) *ModifyMetadataResponse {
-    ret := &ModifyMetadataResponse{}
+func ModifyMetadata(server *meta.EurekaServer, appName, instanceId, key, value string) *CommonResponse {
     requestUrl := fmt.Sprintf("/apps/%s/%s/metadata?%s=%s", appName, instanceId, key, value)
-    ret.Response = DoRequest(200, server, "PUT", requestUrl, nil)
+    return commonHttp(200, server, "PUT", requestUrl, nil)
+}
+
+// SimpleModifyMetadata 变更元数据
+func SimpleModifyMetadata(serviceUrl, appName, instanceId, key, value string) *CommonResponse {
+    return ModifyMetadata(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, key, value)
+}
+
+// QueryVipApps 查询指定IP下的服务列表
+func QueryVipApps(server *meta.EurekaServer, vipAddress string) *AppsResponse {
+    return getApps(server, fmt.Sprintf("/vips/%s", vipAddress))
+}
+
+// SimpleQueryVipApps 查询指定IP下的服务列表
+func SimpleQueryVipApps(serviceUrl, vipAddress string) *AppsResponse {
+    return QueryVipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, vipAddress)
+}
+
+// QuerySvipApps 查询指定安全IP下的服务列表
+func QuerySvipApps(server *meta.EurekaServer, svipAddress string) *AppsResponse {
+    return getApps(server, fmt.Sprintf("/svips/%s", svipAddress))
+}
+
+// SimpleQuerySvipApps 查询指定安全IP下的服务列表
+func SimpleQuerySvipApps(serviceUrl, svipAddress string) *AppsResponse {
+    return QuerySvipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, svipAddress)
+}
+
+// commonHttp 与eureka server通讯公共方法
+func commonHttp(expect int, server *meta.EurekaServer, method string, url string, payload []byte) *CommonResponse {
+    ret := &CommonResponse{}
+    ret.Response = DoRequest(expect, server, method, url, payload)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
     }
@@ -251,27 +242,97 @@ func ModifyMetadata(server *meta.EurekaServer, appName, instanceId, key, value s
     return ret
 }
 
-// SimpleModifyMetadata 变更元数据
-func SimpleModifyMetadata(serviceUrl, appName, instanceId, key, value string) *ModifyMetadataResponse {
-    return ModifyMetadata(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, key, value)
+// getApps 查询服务列表
+func getApps(server *meta.EurekaServer, uri string) (ret *AppsResponse) {
+    ret = &AppsResponse{Apps: make([]*meta.AppInfo, 0)}
+    ret.Response = DoRequest(200, server, "GET", uri, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
+    if ret.Error != nil {
+        return ret
+    }
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+        }
+    }()
+    var ii interface{}
+    ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
+    if ret.Error != nil {
+        return ret
+    }
+    for _, m := range ii.(map[string]interface{})["applications"].(map[string]interface{})["application"].([]interface{}) {
+        var app *meta.AppInfo
+        app, ret.Error = meta.ParseAppInfo(m.(map[string]interface{}))
+        if ret.Error != nil {
+            return ret
+        }
+        ret.Apps = append(ret.Apps, app)
+    }
+    return ret
 }
 
-// QueryVipApps 查询指定IP下的服务列表
-func QueryVipApps(server *meta.EurekaServer, vipAddress string) *QueryVipAppsResponse {
-    return nil
+// getInstances 查询服务实例列表
+func getInstances(server *meta.EurekaServer, uri string) (ret *InstancesResponse) {
+    ret = &InstancesResponse{Instances: make([]*meta.InstanceInfo, 0)}
+    ret.Response = DoRequest(200, server, "GET", uri, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
+    if ret.Error != nil {
+        return ret
+    }
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+        }
+    }()
+    var ii interface{}
+    ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
+    if ret.Error != nil {
+        return ret
+    }
+    for _, m := range ii.(map[string]interface{})["application"].(map[string]interface{})["instance"].([]interface{}) {
+        var instance *meta.InstanceInfo
+        instance, ret.Error = meta.ParseInstanceInfo(m.(map[string]interface{}))
+        if ret.Error != nil {
+            return ret
+        }
+        ret.Instances = append(ret.Instances, instance)
+    }
+    return ret
 }
 
-// SimpleQueryVipApps 查询指定IP下的服务列表
-func SimpleQueryVipApps(serviceUrl, vipAddress string) *QueryVipAppsResponse {
-    return QueryVipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, vipAddress)
-}
-
-// QuerySvipApps 查询指定安全IP下的服务列表
-func QuerySvipApps(server *meta.EurekaServer, svipAddress string) *QuerySvipAppsResponse {
-    return nil
-}
-
-// SimpleQuerySvipApps 查询指定安全IP下的服务列表
-func SimpleQuerySvipApps(serviceUrl, svipAddress string) *QuerySvipAppsResponse {
-    return QuerySvipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, svipAddress)
+// getInstance 查询服务实例
+func getInstance(server *meta.EurekaServer, uri string) (ret *InstanceResponse) {
+    ret = &InstanceResponse{}
+    ret.Response = DoRequest(200, server, "GET", uri, nil)
+    if ret.Response.Error != nil {
+        ret.Error = ret.Response.Error
+    }
+    if ret.Response.HttpResponse != nil {
+        ret.StatusCode = ret.Response.HttpResponse.StatusCode
+    }
+    if ret.Error != nil {
+        return ret
+    }
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+        }
+    }()
+    var ii interface{}
+    ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
+    if ret.Error != nil {
+        return ret
+    }
+    ret.Instance, ret.Error = meta.ParseInstanceInfo(ii.(map[string]interface{})["instance"].(map[string]interface{}))
+    return ret
 }

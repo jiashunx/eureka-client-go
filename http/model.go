@@ -26,83 +26,31 @@ type EurekaResponse struct {
     Responses    []*EurekaResponse
 }
 
-// RegisterResponse 注册新服务请求响应
-type RegisterResponse struct {
+// CommonResponse 通用处理接口请求响应
+type CommonResponse struct {
     Response   *EurekaResponse
     StatusCode int
     Error      error
 }
 
-// UnRegisterResponse 取消注册服务请求响应
-type UnRegisterResponse struct {
+// InstanceResponse 服务实例查询接口请求响应
+type InstanceResponse struct {
     Response   *EurekaResponse
     StatusCode int
     Error      error
+    Instance   *meta.InstanceInfo
 }
 
-// HeartbeatResponse 发送服务心跳请求响应
-type HeartbeatResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-}
-
-// QueryAppsResponse 查询所有服务列表请求响应
-type QueryAppsResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-    Apps       []*meta.AppInfo
-}
-
-// QueryAppResponse 查询指定appName的服务实例列表请求响应
-type QueryAppResponse struct {
+// InstancesResponse 服务实例列表查询接口请求响应
+type InstancesResponse struct {
     Response   *EurekaResponse
     StatusCode int
     Error      error
     Instances  []*meta.InstanceInfo
 }
 
-// QueryAppInstanceResponse 查询指定appName&InstanceId服务实例请求响应
-type QueryAppInstanceResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-    Instance   *meta.InstanceInfo
-}
-
-// QueryInstanceResponse 查询指定InstanceId服务实例请求响应
-type QueryInstanceResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-    Instance   *meta.InstanceInfo
-}
-
-// ChangeStatusResponse 变更服务状态请求响应
-type ChangeStatusResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-}
-
-// ModifyMetadataResponse 变更元数据请求响应
-type ModifyMetadataResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-}
-
-// QueryVipAppsResponse 查询指定IP下的服务列表请求响应
-type QueryVipAppsResponse struct {
-    Response   *EurekaResponse
-    StatusCode int
-    Error      error
-    Apps       []*meta.AppInfo
-}
-
-// QuerySvipAppsResponse 查询指定安全IP下的服务列表请求响应
-type QuerySvipAppsResponse struct {
+// AppsResponse 服务列表查询接口请求响应
+type AppsResponse struct {
     Response   *EurekaResponse
     StatusCode int
     Error      error

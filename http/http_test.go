@@ -20,7 +20,12 @@ var eurekaServer2 = &meta.EurekaServer{
     Password:   "123123",
 }
 
-var instance = &meta.InstanceInfo{AppName: "test", InstanceId: "hello"}
+var instance = &meta.InstanceInfo{
+    AppName:          "test",
+    InstanceId:       "hello",
+    VipAddress:       meta.DefaultVirtualHostname,
+    SecureVipAddress: meta.DefaultSecureVirtualHostname,
+}
 
 func TestRegister(t *testing.T) {
     ast := assert.New(t)
@@ -52,6 +57,43 @@ func TestQueryApps(t *testing.T) {
     fmt.Println("QueryApps请求URL:", response.Response.Request.RequestUrl)
     fmt.Println("QueryApps响应状态:", response.StatusCode)
     fmt.Println("QueryApps响应报文:", response.Response.Body)
+    fmt.Println("QueryApps返回结果:", fmt.Sprintf("%#v", *response.Apps[0]))
+}
+
+func TestQueryApp(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQueryApp(serviceUrl, instance.AppName)
+    ast.Nilf(response.Error, "QueryApp处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QueryApp请求方法:", response.Response.Request.Method)
+    fmt.Println("QueryApp请求URL:", response.Response.Request.RequestUrl)
+    fmt.Println("QueryApp响应状态:", response.StatusCode)
+    fmt.Println("QueryApp响应报文:", response.Response.Body)
+    fmt.Println("QueryApp返回结果:", fmt.Sprintf("%#v", *response.Instances[0]))
+}
+
+func TestQueryAppInstance(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQueryAppInstance(serviceUrl, instance.AppName, instance.InstanceId)
+    ast.Nilf(response.Error, "QueryAppInstance处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QueryAppInstance请求方法:", response.Response.Request.Method)
+    fmt.Println("QueryAppInstance请求URL:", response.Response.Request.RequestUrl)
+    fmt.Println("QueryAppInstance响应状态:", response.StatusCode)
+    fmt.Println("QueryAppInstance响应报文:", response.Response.Body)
+    fmt.Println("QueryAppInstance返回结果:", fmt.Sprintf("%#v", *response.Instance))
+}
+
+func TestQueryInstance(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQueryInstance(serviceUrl, instance.InstanceId)
+    ast.Nilf(response.Error, "QueryInstance处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QueryInstance请求方法:", response.Response.Request.Method)
+    fmt.Println("QueryInstance请求URL:", response.Response.Request.RequestUrl)
+    fmt.Println("QueryInstance响应状态:", response.StatusCode)
+    fmt.Println("QueryInstance响应报文:", response.Response.Body)
+    fmt.Println("QueryInstance返回结果:", fmt.Sprintf("%#v", *response.Instance))
 }
 
 func TestChangeStatus(t *testing.T) {
@@ -72,6 +114,30 @@ func TestModifyMetadata(t *testing.T) {
     fmt.Println("ModifyMetadata请求方法:", response.Response.Request.Method)
     fmt.Println("ModifyMetadata请求URL:", response.Response.Request.RequestUrl)
     fmt.Println("ModifyMetadata响应状态:", response.StatusCode)
+}
+
+func TestQueryVipApps(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQueryVipApps(serviceUrl, instance.VipAddress)
+    ast.Nilf(response.Error, "QueryVipApps处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QueryVipApps请求方法:", response.Response.Request.Method)
+    fmt.Println("QueryVipApps请求URL:", response.Response.Request.RequestUrl)
+    fmt.Println("QueryVipApps响应状态:", response.StatusCode)
+    fmt.Println("QueryVipApps响应报文:", response.Response.Body)
+    fmt.Println("QueryVipApps返回结果:", fmt.Sprintf("%#v", *response.Apps[0]))
+}
+
+func TestQuerySvipApps(t *testing.T) {
+    ast := assert.New(t)
+    response := SimpleQuerySvipApps(serviceUrl, instance.SecureVipAddress)
+    ast.Nilf(response.Error, "QuerySvipApps处理失败，失败原因：%s", response.Error)
+    ast.Equal(200, response.StatusCode)
+    fmt.Println("QuerySvipApps请求方法:", response.Response.Request.Method)
+    fmt.Println("QuerySvipApps请求URL:", response.Response.Request.RequestUrl)
+    fmt.Println("QuerySvipApps响应状态:", response.StatusCode)
+    fmt.Println("QuerySvipApps响应报文:", response.Response.Body)
+    fmt.Println("QuerySvipApps返回结果:", fmt.Sprintf("%#v", *response.Apps[0]))
 }
 
 func TestUnRegister(t *testing.T) {
