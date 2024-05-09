@@ -6,7 +6,7 @@ import (
     "testing"
 )
 
-var serviceUrl = "http://192.168.138.130:20000/eureka"
+var serviceUrl = "http://127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
 
 var instance = &meta.InstanceInfo{AppName: "test", InstanceId: "hello"}
 
