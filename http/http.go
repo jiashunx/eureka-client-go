@@ -7,6 +7,7 @@ import (
     "github.com/jiashunx/eureka-client-go/meta"
     "math"
     "net/http"
+    "net/url"
     "strings"
     "time"
 )
@@ -19,16 +20,27 @@ func DoRequest(server *meta.EurekaServer, expect int, method string, uri string,
     // 遍历eureka server服务地址，循环发请求直至成功
     for _, su := range strings.Split(server.ServiceUrl, ",") {
         method = strings.TrimSpace(method)
-        url := su + strings.TrimSpace(uri)
+        var URL *url.URL
+        URL, err = url.Parse(su)
+        if err != nil {
+            continue
+        }
+        nu := URL.Scheme + "://" + URL.Hostname() + ":" + URL.Port() + URL.Path + strings.TrimSpace(uri)
+        if URL.Port() == "" {
+            nu = URL.Scheme + "://" + URL.Hostname() + URL.Path + strings.TrimSpace(uri)
+        }
         body := ""
         if payload != nil {
             body = strings.TrimSpace(string(payload))
         }
-        request, err = http.NewRequest(method, url, strings.NewReader(body))
+        request, err = http.NewRequest(method, nu, strings.NewReader(body))
         if err != nil {
             continue
         }
-        if server.Username != "" && server.Password != "" {
+        if URL.User != nil && URL.User.String() != "" {
+            password, _ := URL.User.Password()
+            request.SetBasicAuth(URL.User.Username(), password)
+        } else if server.Username != "" && server.Password != "" {
             request.SetBasicAuth(server.Username, server.Password)
         }
         request.Header.Set("Accept", "application/json")

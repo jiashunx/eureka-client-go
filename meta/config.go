@@ -331,9 +331,9 @@ func GetLocalIpv4Address() (string, error) {
 type EurekaServer struct {
     // 服务地址
     ServiceUrl string
-    // BasicAuth用户名
+    // BasicAuth用户名, 若 ServiceUrl 中指定了安全认证信息, 则其优先级更高
     Username string
-    // BasicAuth密码
+    // BasicAuth密码, 若 ServiceUrl 中指定了安全认证信息, 则其优先级更高
     Password string
     // 读超时秒数
     ReadTimeoutSeconds int
