@@ -12,61 +12,99 @@ import (
     "time"
 )
 
+// EurekaRequest 与eureka server通讯请求模型
+type EurekaRequest struct {
+    ServiceUrl    string
+    Username      string
+    Password      string
+    Authorization string
+    Method        string
+    RequestUrl    string
+    RequestUri    string
+    Body          string
+}
+
+// EurekaResponse 与eureka server通讯响应（包含同批次所有通讯响应）
+type EurekaResponse struct {
+    HttpRequest  *http.Request
+    HttpResponse *http.Response
+    Request      *EurekaRequest
+    Error        error
+    Responses    []*EurekaResponse
+}
+
 // DoRequest 与eureka server通讯处理
-func DoRequest(server *meta.EurekaServer, expect int, method string, uri string, payload []byte) (*http.Response, error) {
-    var request *http.Request
-    var response *http.Response
-    var err error
+func DoRequest(server *meta.EurekaServer, expect int, method string, uri string, payload []byte) *EurekaResponse {
+    var responses = make([]*EurekaResponse, 0)
     // 遍历eureka server服务地址，循环发请求直至成功
-    for _, su := range strings.Split(server.ServiceUrl, ",") {
-        method = strings.TrimSpace(method)
-        var URL *url.URL
-        URL, err = url.Parse(su)
+    for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
+        request := &EurekaRequest{
+            ServiceUrl:    serviceUrl,
+            Username:      server.Username,
+            Password:      server.Password,
+            Authorization: "",
+            Method:        method,
+            RequestUrl:    "",
+            RequestUri:    uri,
+            Body:          "",
+        }
+        response := &EurekaResponse{Request: request}
+        if payload != nil {
+            request.Body = string(payload)
+        }
+        URL, err := url.Parse(serviceUrl)
         if err != nil {
+            response.Error = err
+            responses = append(responses, response)
             continue
         }
-        nu := URL.Scheme + "://" + URL.Hostname() + ":" + URL.Port() + URL.Path + strings.TrimSpace(uri)
+        request.RequestUrl = URL.Scheme + "://" + URL.Hostname() + ":" + URL.Port() + URL.Path + strings.TrimSpace(uri)
         if URL.Port() == "" {
-            nu = URL.Scheme + "://" + URL.Hostname() + URL.Path + strings.TrimSpace(uri)
+            request.RequestUrl = URL.Scheme + "://" + URL.Hostname() + URL.Path + strings.TrimSpace(uri)
         }
-        body := ""
-        if payload != nil {
-            body = strings.TrimSpace(string(payload))
-        }
-        request, err = http.NewRequest(method, nu, strings.NewReader(body))
-        if err != nil {
+        httpRequest, err := http.NewRequest(request.Method, request.RequestUrl, strings.NewReader(request.Body))
+        response.HttpRequest = httpRequest
+        response.Error = err
+        if response.Error != nil {
+            responses = append(responses, response)
             continue
         }
         if URL.User != nil && URL.User.String() != "" {
             password, _ := URL.User.Password()
-            request.SetBasicAuth(URL.User.Username(), password)
+            httpRequest.SetBasicAuth(URL.User.Username(), password)
         } else if server.Username != "" && server.Password != "" {
-            request.SetBasicAuth(server.Username, server.Password)
+            httpRequest.SetBasicAuth(server.Username, server.Password)
         }
-        request.Header.Set("Accept", "application/json")
-        if body != "" {
-            request.Header.Set("Content-Type", "application/json")
+        request.Authorization = httpRequest.Header.Get("Authorization")
+        httpRequest.Header.Set("Accept", "application/json")
+        if request.Body != "" {
+            httpRequest.Header.Set("Content-Type", "application/json")
         }
-        client := http.DefaultClient
+        httpClient := http.DefaultClient
         if server.ReadTimeoutSeconds > 0 || server.ConnectTimeoutSeconds > 0 {
             seconds := time.Duration(int64(math.Max(float64(server.ReadTimeoutSeconds), float64(server.ConnectTimeoutSeconds))))
-            client = &http.Client{Timeout: seconds * time.Second}
+            httpClient = &http.Client{Timeout: seconds * time.Second}
         }
-        response, err = client.Do(request)
-        if err != nil {
-            continue
-        }
-        if response.StatusCode == expect {
-            return response, nil
+        httpResponse, err := httpClient.Do(httpRequest)
+        response.HttpResponse = httpResponse
+        response.Error = err
+        responses = append(responses, response)
+        if response.Error == nil && httpResponse.StatusCode == expect {
+            break
         }
     }
-    if err != nil {
-        return nil, err
+    for _, r := range responses {
+        r.Responses = responses
     }
-    if response != nil {
-        return response, nil
+    if len(responses) == 0 {
+        return &EurekaResponse{
+            Request:      nil,
+            HttpResponse: nil,
+            Error:        errors.New("无可用serviceUrl"),
+            Responses:    responses,
+        }
     }
-    return nil, errors.New("无可用serviceUrl")
+    return responses[len(responses)-1]
 }
 
 // Register 注册新服务
@@ -81,11 +119,11 @@ func Register(server *meta.EurekaServer, instance *meta.InstanceInfo) (int, erro
     if err != nil {
         return 0, err
     }
-    response, err := DoRequest(server, 204, "POST", fmt.Sprintf("/apps/%s", instance.AppName), payload)
-    if err != nil {
-        return 0, err
+    response := DoRequest(server, 204, "POST", fmt.Sprintf("/apps/%s", instance.AppName), payload)
+    if response.Error != nil {
+        return 0, response.Error
     }
-    return response.StatusCode, nil
+    return response.HttpResponse.StatusCode, nil
 }
 
 // SimpleRegister 注册新服务
@@ -95,11 +133,11 @@ func SimpleRegister(serviceUrl string, instance *meta.InstanceInfo) (int, error)
 
 // UnRegister 取消注册服务
 func UnRegister(server *meta.EurekaServer, appName, instanceId string) (int, error) {
-    response, err := DoRequest(server, 200, "DELETE", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
-    if err != nil {
-        return 0, err
+    response := DoRequest(server, 200, "DELETE", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
+    if response.Error != nil {
+        return 0, response.Error
     }
-    return response.StatusCode, nil
+    return response.HttpResponse.StatusCode, nil
 }
 
 // SimpleUnRegister 取消注册服务
@@ -109,11 +147,11 @@ func SimpleUnRegister(serviceUrl, appName, instanceId string) (int, error) {
 
 // Heartbeat 发送服务心跳
 func Heartbeat(server *meta.EurekaServer, appName, instanceId string) (int, error) {
-    response, err := DoRequest(server, 200, "PUT", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
-    if err != nil {
-        return 0, err
+    response := DoRequest(server, 200, "PUT", fmt.Sprintf("/apps/%s/%s", appName, instanceId), nil)
+    if response.Error != nil {
+        return 0, response.Error
     }
-    return response.StatusCode, nil
+    return response.HttpResponse.StatusCode, nil
 }
 
 // SimpleHeartbeat 发送服务心跳
