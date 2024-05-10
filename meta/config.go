@@ -219,7 +219,9 @@ func (config *EurekaConfig) Check() error {
         nic.LeaseExpirationDurationInSeconds = DefaultLeaseExpirationDurationInSeconds
     }
     nic.NonSecurePort = ic.NonSecurePort
-    if nic.NonSecurePort <= 0 {
+    if nic.NonSecurePort > 0 {
+        nic.NonSecurePortEnabled = &True
+    } else {
         nic.NonSecurePort = DefaultNonSecurePort
     }
     nic.NonSecurePortEnabled = ic.NonSecurePortEnabled
@@ -227,7 +229,9 @@ func (config *EurekaConfig) Check() error {
         nic.NonSecurePortEnabled = DefaultNonSecurePortEnabled
     }
     nic.SecurePort = ic.SecurePort
-    if nic.SecurePort <= 0 {
+    if nic.SecurePort > 0 {
+        nic.SecurePortEnabled = &True
+    } else {
         nic.SecurePort = DefaultSecurePort
     }
     nic.SecurePortEnabled = ic.SecurePortEnabled
