@@ -199,14 +199,18 @@ func SimpleChangeStatus(serviceUrl, appName, instanceId string, status meta.Inst
 }
 
 // ModifyMetadata 变更元数据
-func ModifyMetadata(server *meta.EurekaServer, appName, instanceId, key, value string) *CommonResponse {
-    requestUrl := fmt.Sprintf("/apps/%s/%s/metadata?%s=%s", appName, instanceId, key, value)
+func ModifyMetadata(server *meta.EurekaServer, appName, instanceId string, metadata map[string]string) *CommonResponse {
+    requestUrl := fmt.Sprintf("/apps/%s/%s/metadata?", appName, instanceId)
+    for k, v := range metadata {
+        requestUrl = requestUrl + k + "=" + v + "&"
+    }
+    requestUrl = requestUrl[0:(len(requestUrl) - 2)]
     return commonHttp(200, server, "PUT", requestUrl, nil)
 }
 
 // SimpleModifyMetadata 变更元数据
-func SimpleModifyMetadata(serviceUrl, appName, instanceId, key, value string) *CommonResponse {
-    return ModifyMetadata(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, key, value)
+func SimpleModifyMetadata(serviceUrl, appName, instanceId string, metadata map[string]string) *CommonResponse {
+    return ModifyMetadata(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, metadata)
 }
 
 // QueryVipApps 查询指定IP下的服务列表

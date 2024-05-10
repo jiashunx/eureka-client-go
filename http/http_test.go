@@ -108,7 +108,7 @@ func TestChangeStatus(t *testing.T) {
 
 func TestModifyMetadata(t *testing.T) {
     ast := assert.New(t)
-    response := SimpleModifyMetadata(serviceUrl, instance.AppName, instance.InstanceId, "hello", "world")
+    response := SimpleModifyMetadata(serviceUrl, instance.AppName, instance.InstanceId, map[string]string{"hello": "world"})
     ast.Nilf(response.Error, "ModifyMetadata处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("ModifyMetadata请求方法:", response.Response.Request.Method)
