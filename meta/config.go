@@ -126,11 +126,30 @@ type EurekaConfig struct {
     *ClientConfig
 }
 
-// NewEurekaConfig 根据 InstanceConfig 及 ClientConfig 构造新的 EurekaConfig 对象
-func NewEurekaConfig(ic *InstanceConfig, cc *ClientConfig) (*EurekaConfig, error) {
+// GetEurekaServerInfo 获取当前eureka客户端连接的eureka server信息
+func (config *EurekaConfig) GetEurekaServerInfo() (*EurekaServer, error) {
+    if config == nil {
+        return nil, errors.New("EurekaConfig is nil")
+    }
+    if err := config.Check(); err != nil {
+        return nil, err
+    }
+    server := &EurekaServer{
+        ServiceUrl:            config.ServiceUrlOfAllZone[config.Zone],
+        Username:              config.EurekaServerUsername,
+        Password:              config.EurekaServerPassword,
+        ReadTimeoutSeconds:    config.EurekaServerReadTimeoutSeconds,
+        ConnectTimeoutSeconds: config.EurekaServerConnectTimeoutSeconds,
+    }
+    return server, nil
+}
+
+// Check 检查属性: InstanceConfig 及 ClientConfig
+func (config *EurekaConfig) Check() error {
+    ic, cc := config.InstanceConfig, config.ClientConfig
     hostInfo, err := GetLocalHostInfo()
     if err != nil {
-        return nil, err
+        return err
     }
     // InstanceConfig解析处理
     nic := &InstanceConfig{}
@@ -276,10 +295,9 @@ func NewEurekaConfig(ic *InstanceConfig, cc *ClientConfig) (*EurekaConfig, error
             ncc.ServiceUrlOfAllZone[zone] = DefaultServiceUrl
         }
     }
-    return &EurekaConfig{
-        nic,
-        ncc,
-    }, nil
+    config.InstanceConfig = nic
+    config.ClientConfig = ncc
+    return nil
 }
 
 // HostInfo 当前主机信息
