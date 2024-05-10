@@ -99,10 +99,10 @@ func (client *EurekaClient) EnableDiscovery(enabled bool) *DiscoveryClient {
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
-func NewEurekaClient(instanceConfig *meta.InstanceConfig, clientConfig *meta.ClientConfig) (*EurekaClient, error) {
+func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     eurekaConfig := &meta.EurekaConfig{
-        InstanceConfig: instanceConfig,
-        ClientConfig:   clientConfig,
+        InstanceConfig: config.InstanceConfig,
+        ClientConfig:   config.ClientConfig,
     }
     if err := eurekaConfig.Check(); err != nil {
         return nil, err
