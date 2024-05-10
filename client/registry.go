@@ -10,10 +10,11 @@ import (
 
 // RegistryClient eureka服务注册客户端
 type RegistryClient struct {
-    config    *meta.EurekaConfig
-    ctx       context.Context
-    heartbeat bool                // 是否开启心跳
-    status    meta.InstanceStatus // 服务实例状态
+    config     *meta.EurekaConfig
+    ctx        context.Context
+    httpClient *http.Client
+    heartbeat  bool                // 是否开启心跳
+    status     meta.InstanceStatus // 服务实例状态
 }
 
 // start 启动eureka服务注册客户端
@@ -31,7 +32,7 @@ func (client *RegistryClient) start() (response *http.CommonResponse) {
     if err != nil {
         return &http.CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
     }
-    response = http.Register(server, instance)
+    response = client.httpClient.Register(server, instance)
     client.heartbeat = response.Error == nil && response.StatusCode == 204
     return response
 }
@@ -59,7 +60,7 @@ func (client *RegistryClient) heartBeat0() {
         if err != nil {
             return
         }
-        _ = http.Heartbeat(server, client.config.AppName, client.config.InstanceId)
+        _ = client.httpClient.Heartbeat(server, client.config.AppName, client.config.InstanceId)
     }
 }
 
@@ -74,7 +75,7 @@ func (client *RegistryClient) changeStatus(status meta.InstanceStatus) (response
     }
     switch status {
     case meta.StatusUp, meta.StatusDown, meta.StatusStarting, meta.StatusOutOfService, meta.StatusUnknown:
-        response = http.ChangeStatus(server, client.config.AppName, client.config.InstanceId, status)
+        response = client.httpClient.ChangeStatus(server, client.config.AppName, client.config.InstanceId, status)
         if response.Error != nil {
             break
         }
@@ -95,7 +96,7 @@ func (client *RegistryClient) changeMetadata(metadata map[string]string) (respon
     if err != nil {
         return &http.CommonResponse{Error: err}
     }
-    response = http.ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
+    response = client.httpClient.ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
     if response.Error == nil && response.StatusCode == 200 {
         for key, value := range metadata {
             client.config.Metadata[key] = value

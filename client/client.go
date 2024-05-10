@@ -110,11 +110,12 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     if err := eurekaConfig.Check(); err != nil {
         return nil, err
     }
+    httpClient := &http.Client{}
     return &EurekaClient{
         config:          eurekaConfig,
         ctx:             nil,
         ctxCancel:       nil,
-        RegistryClient:  &RegistryClient{config: eurekaConfig, ctx: nil},
-        DiscoveryClient: &DiscoveryClient{config: eurekaConfig, ctx: nil},
+        RegistryClient:  &RegistryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
+        DiscoveryClient: &DiscoveryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
     }, nil
 }

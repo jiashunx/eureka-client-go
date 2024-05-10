@@ -10,9 +10,10 @@ import (
 
 // DiscoveryClient eureka服务发现客户端
 type DiscoveryClient struct {
-    config *meta.EurekaConfig
-    ctx    context.Context
-    Apps   map[string][]*meta.AppInfo // zone与服务列表映射
+    config     *meta.EurekaConfig
+    ctx        context.Context
+    httpClient *http.Client
+    Apps       map[string][]*meta.AppInfo // zone与服务列表映射
 }
 
 // start 启动eureka服务发现客户端
@@ -48,7 +49,7 @@ func (client *DiscoveryClient) discovery0() {
     c := make(chan map[string][]*meta.AppInfo)
     for zone, server := range servers {
         go func(zone string, server *meta.EurekaServer) {
-            response := http.QueryApps(server)
+            response := client.httpClient.QueryApps(server)
             if response.Error != nil {
                 c <- map[string][]*meta.AppInfo{}
                 return
