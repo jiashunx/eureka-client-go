@@ -14,6 +14,7 @@ type EurekaClient struct {
     ctxCancel       context.CancelFunc
     RegistryClient  *RegistryClient
     DiscoveryClient *DiscoveryClient
+    HttpClient      *http.Client
 }
 
 // Start 启动eureka客户端
@@ -117,5 +118,6 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
         ctxCancel:       nil,
         RegistryClient:  &RegistryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
         DiscoveryClient: &DiscoveryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
+        HttpClient:      httpClient,
     }, nil
 }

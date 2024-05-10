@@ -1,6 +1,7 @@
 package client
 
 import (
+    "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
     "github.com/stretchr/testify/assert"
     "testing"
@@ -69,4 +70,21 @@ func TestEurekaClient2(t *testing.T) {
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
     client.Stop()
     <-time.NewTimer(2 * time.Second).C
+}
+
+// TestEurekaClient3 客户端测试样例3
+func TestEurekaClient3(t *testing.T) {
+    ast := assert.New(t)
+    client, err := NewEurekaClient(&meta.EurekaConfig{
+        ClientConfig: &meta.ClientConfig{
+            DiscoveryEnabled: &meta.False,
+            RegistryEnabled:  &meta.False,
+        },
+    })
+    ast.Nilf(err, "创建EurekaClient失败，失败原因：%v", err)
+    // 获取与eureka server通讯的http客户端
+    httpClient := client.HttpClient
+    response := httpClient.QueryApps(&meta.EurekaServer{ServiceUrl: serviceUrl})
+    ast.Nilf(response.Error, "查询服务列表失败，失败原因：%v", response.Error)
+    fmt.Println("查询服务列表:", response.Apps)
 }
