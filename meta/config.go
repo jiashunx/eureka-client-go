@@ -15,7 +15,7 @@ var (
     StrFalse                                             = "false"
     DefaultAppName                                       = "unknown"
     DefaultPreferIpAddress                               = &False
-    DefaultInstanceEnabledOnIt                           = &False
+    DefaultInstanceEnabledOnIt                           = &True
     DefaultLeaseRenewalIntervalInSeconds                 = 30
     DefaultLeaseExpirationDurationInSeconds              = 90
     DefaultNonSecurePort                                 = 80
@@ -29,7 +29,7 @@ var (
     DefaultHealthCheckUrlPath                            = "/actuator/health"
     DefaultEurekaServerReadTimeoutSeconds                = 8
     DefaultEurekaServerConnectTimeoutSeconds             = 5
-    DefaultRegisterEnabled                               = &True
+    DefaultRegistryEnabled                               = &True
     DefaultInstanceInfoReplicationIntervalSeconds        = 30
     DefaultInitialInstanceInfoReplicationIntervalSeconds = 30
     DefaultDiscoveryEnabled                              = &True
@@ -96,8 +96,8 @@ type ClientConfig struct {
     EurekaServerReadTimeoutSeconds int
     // 连接eureka server的超时时间, 默认: DefaultEurekaServerConnectTimeoutSeconds
     EurekaServerConnectTimeoutSeconds int
-    // 是否开启服务注册, 默认: DefaultRegisterEnabled
-    RegisterEnabled *bool
+    // 是否开启服务注册, 默认: DefaultRegistryEnabled
+    RegistryEnabled *bool
     // 更新实例信息到eureka server的时间间隔, 默认: DefaultInstanceInfoReplicationIntervalSeconds
     InstanceInfoReplicationIntervalSeconds int
     // 初始化实例信息到eureka server的时间间隔, 默认: DefaultInitialInstanceInfoReplicationIntervalSeconds
@@ -124,10 +124,12 @@ type ClientConfig struct {
 type EurekaConfig struct {
     *InstanceConfig
     *ClientConfig
+    checked      bool
+    checkedError error
 }
 
-// GetEurekaServerInfo 获取当前eureka客户端连接的eureka server信息
-func (config *EurekaConfig) GetEurekaServerInfo() (*EurekaServer, error) {
+// GetCurrZoneEurekaServer 获取当前zone的eureka server信息
+func (config *EurekaConfig) GetCurrZoneEurekaServer() (*EurekaServer, error) {
     if config == nil {
         return nil, errors.New("EurekaConfig is nil")
     }
@@ -144,8 +146,32 @@ func (config *EurekaConfig) GetEurekaServerInfo() (*EurekaServer, error) {
     return server, nil
 }
 
+// GetAllZoneEurekaServers 获取所有zone的eureka server信息列表
+func (config *EurekaConfig) GetAllZoneEurekaServers() (map[string]*EurekaServer, error) {
+    if config == nil {
+        return nil, errors.New("EurekaConfig is nil")
+    }
+    if err := config.Check(); err != nil {
+        return nil, err
+    }
+    servers := make(map[string]*EurekaServer)
+    for zone, serviceUrl := range config.ServiceUrlOfAllZone {
+        servers[zone] = &EurekaServer{
+            ServiceUrl:            serviceUrl,
+            Username:              config.EurekaServerUsername,
+            Password:              config.EurekaServerPassword,
+            ReadTimeoutSeconds:    config.EurekaServerReadTimeoutSeconds,
+            ConnectTimeoutSeconds: config.EurekaServerConnectTimeoutSeconds,
+        }
+    }
+    return servers, nil
+}
+
 // Check 检查属性: InstanceConfig 及 ClientConfig
 func (config *EurekaConfig) Check() error {
+    if config.checked {
+        return config.checkedError
+    }
     ic, cc := config.InstanceConfig, config.ClientConfig
     hostInfo, err := GetLocalHostInfo()
     if err != nil {
@@ -246,9 +272,9 @@ func (config *EurekaConfig) Check() error {
     if ncc.EurekaServerConnectTimeoutSeconds <= 0 {
         ncc.EurekaServerConnectTimeoutSeconds = DefaultEurekaServerConnectTimeoutSeconds
     }
-    ncc.RegisterEnabled = cc.RegisterEnabled
-    if ncc.RegisterEnabled == nil {
-        ncc.RegisterEnabled = DefaultRegisterEnabled
+    ncc.RegistryEnabled = cc.RegistryEnabled
+    if ncc.RegistryEnabled == nil {
+        ncc.RegistryEnabled = DefaultRegistryEnabled
     }
     ncc.InstanceInfoReplicationIntervalSeconds = cc.InstanceInfoReplicationIntervalSeconds
     if ncc.InstanceInfoReplicationIntervalSeconds <= 0 {
@@ -291,12 +317,16 @@ func (config *EurekaConfig) Check() error {
         ncc.ServiceUrlOfAllZone = make(map[string]string)
     }
     for _, zone := range strings.Split(ncc.AvailableZones, ",") {
-        if z, ok := ncc.ServiceUrlOfAllZone[zone]; !ok || strings.TrimSpace(z) == "" {
+        if serviceUrl, ok := ncc.ServiceUrlOfAllZone[zone]; !ok || strings.TrimSpace(serviceUrl) == "" {
             ncc.ServiceUrlOfAllZone[zone] = DefaultServiceUrl
+            if zone == DefaultZone {
+                ncc.ServiceUrlOfAllZone[zone] = ncc.ServiceUrlOfDefaultZone
+            }
         }
     }
     config.InstanceConfig = nic
     config.ClientConfig = ncc
+    config.checked = true
     return nil
 }
 
