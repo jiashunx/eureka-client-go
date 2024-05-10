@@ -69,7 +69,7 @@ func (client *DiscoveryClient) discovery0() {
 // isEnabled 服务发现功能是否开启
 func (client *DiscoveryClient) isEnabled() (bool, error) {
     if !*client.config.DiscoveryEnabled {
-        return false, errors.New("service discovery feature is not enabled")
+        return false, errors.New("eureka client's service discovery feature is not enabled")
     }
     return true, nil
 }

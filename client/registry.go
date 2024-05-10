@@ -81,7 +81,7 @@ func (client *RegistryClient) changeStatus(status meta.InstanceStatus) (response
         client.status = status
         client.heartbeat = status == meta.StatusUp
     default:
-        response = &http.CommonResponse{Error: errors.New("invalid status: " + string(status))}
+        response = &http.CommonResponse{Error: errors.New("failed to change service instance's status, reason: status is invalid: " + string(status))}
     }
     return response
 }
@@ -107,7 +107,7 @@ func (client *RegistryClient) changeMetadata(metadata map[string]string) (respon
 // isEnabled 服务注册功能是否开启
 func (client *RegistryClient) isEnabled() (bool, error) {
     if !*client.config.RegistryEnabled {
-        return false, errors.New("service registration feature is not enabled")
+        return false, errors.New("eureka client's service registration feature is not enabled")
     }
     return true, nil
 }

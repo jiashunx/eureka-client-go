@@ -18,7 +18,7 @@ func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err erro
     defer func() {
         if rc := recover(); rc != nil {
             dc = nil
-            err = errors.New(fmt.Sprintf("%v", rc))
+            err = errors.New(fmt.Sprintf("failed to parse data center info, reason: %v", rc))
         }
     }()
     dc = &DataCenterInfo{}
@@ -50,7 +50,7 @@ func ParseLeaseInfo(m map[string]interface{}) (lease *LeaseInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             lease = nil
-            err = errors.New(fmt.Sprintf("%v", rc))
+            err = errors.New(fmt.Sprintf("failed to parse lease info, reason: %v", rc))
         }
     }()
     lease = &LeaseInfo{}
@@ -87,7 +87,7 @@ func ParsePortWrapper(m map[string]interface{}) (wrapper *PortWrapper, err error
     defer func() {
         if rc := recover(); rc != nil {
             wrapper = nil
-            err = errors.New(fmt.Sprintf("%v", rc))
+            err = errors.New(fmt.Sprintf("failed to parse port wrapper info, reason: %v", rc))
         }
     }()
     wrapper = &PortWrapper{}
@@ -180,7 +180,7 @@ func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err er
     defer func() {
         if rc := recover(); rc != nil {
             instance = nil
-            err = errors.New(fmt.Sprintf("%v", rc))
+            err = errors.New(fmt.Sprintf("failed to parse instance info, reason: %v", rc))
         }
     }()
     instance = &InstanceInfo{}

@@ -91,13 +91,13 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
         return &EurekaResponse{
             Request:      nil,
             HttpResponse: nil,
-            Error:        errors.New("无可用serviceUrl"),
+            Error:        errors.New("no eureka server service address available"),
             Responses:    responses,
         }
     }
     response := responses[len(responses)-1]
     if response.Error == nil && response.HttpResponse.StatusCode != expect {
-        response.Error = errors.New(fmt.Sprintf("HTTP响应码错误, 预期: %d, 实际: %d", expect, response.HttpResponse.StatusCode))
+        response.Error = errors.New(fmt.Sprintf("the http response code is incorrect, expect: %d, actual: %d", expect, response.HttpResponse.StatusCode))
     }
     return response
 }
@@ -261,7 +261,7 @@ func getApps(server *meta.EurekaServer, uri string) (ret *AppsResponse) {
     }
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to get services, reason: %v", rc))
         }
     }()
     var ii interface{}
@@ -303,7 +303,7 @@ func getInstances(server *meta.EurekaServer, uri string) (ret *InstancesResponse
     }
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to get service instances, reason: %v", rc))
         }
     }()
     var ii interface{}
@@ -342,7 +342,7 @@ func getInstance(server *meta.EurekaServer, uri string) (ret *InstanceResponse) 
     }
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("%v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to get service instance, reason: %v", rc))
         }
     }()
     var ii interface{}

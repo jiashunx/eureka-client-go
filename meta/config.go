@@ -350,11 +350,11 @@ func GetLocalHostInfo() (*HostInfo, error) {
     if LocalHostInfo == nil {
         hostname, err := os.Hostname()
         if err != nil {
-            return nil, errors.New("获取本机hostname失败, 原因: " + err.Error())
+            return nil, errors.New("failed to get the local hostname, reason: " + err.Error())
         }
         ipAddress, err := GetLocalIpv4Address()
         if err != nil {
-            return nil, errors.New("获取本机IP失败, 原因: " + err.Error())
+            return nil, errors.New("failed to get the local ip, reason: " + err.Error())
         }
         LocalHostInfo = &HostInfo{
             hostname,
