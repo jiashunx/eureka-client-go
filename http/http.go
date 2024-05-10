@@ -97,7 +97,7 @@ func DoRequest(expect int, server *meta.EurekaServer, method string, uri string,
     }
     response := responses[len(responses)-1]
     if response.Error == nil && response.HttpResponse.StatusCode != expect {
-        response.Error = errors.New(fmt.Sprintf("请求响应码错误, 预期: %d, 实际: %d", expect, response.HttpResponse.StatusCode))
+        response.Error = errors.New(fmt.Sprintf("HTTP响应码错误, 预期: %d, 实际: %d", expect, response.HttpResponse.StatusCode))
     }
     return response
 }
@@ -265,7 +265,15 @@ func getApps(server *meta.EurekaServer, uri string) (ret *AppsResponse) {
     if ret.Error != nil {
         return ret
     }
-    for _, m := range ii.(map[string]interface{})["applications"].(map[string]interface{})["application"].([]interface{}) {
+    ij := ii.(map[string]interface{})["applications"]
+    if ij == nil {
+        return ret
+    }
+    ik := ij.(map[string]interface{})["application"]
+    if ik == nil {
+        return ret
+    }
+    for _, m := range ik.([]interface{}) {
         var app *meta.AppInfo
         app, ret.Error = meta.ParseAppInfo(m.(map[string]interface{}))
         if ret.Error != nil {
@@ -299,7 +307,12 @@ func getInstances(server *meta.EurekaServer, uri string) (ret *InstancesResponse
     if ret.Error != nil {
         return ret
     }
-    for _, m := range ii.(map[string]interface{})["application"].(map[string]interface{})["instance"].([]interface{}) {
+    ij := ii.(map[string]interface{})["application"]
+    if ij == nil {
+        return ret
+    }
+    ik := ij.(map[string]interface{})["instance"]
+    for _, m := range ik.([]interface{}) {
         var instance *meta.InstanceInfo
         instance, ret.Error = meta.ParseInstanceInfo(m.(map[string]interface{}))
         if ret.Error != nil {
@@ -333,6 +346,10 @@ func getInstance(server *meta.EurekaServer, uri string) (ret *InstanceResponse) 
     if ret.Error != nil {
         return ret
     }
-    ret.Instance, ret.Error = meta.ParseInstanceInfo(ii.(map[string]interface{})["instance"].(map[string]interface{}))
+    ij := ii.(map[string]interface{})["instance"]
+    if ij == nil {
+        return ret
+    }
+    ret.Instance, ret.Error = meta.ParseInstanceInfo(ij.(map[string]interface{}))
     return ret
 }
