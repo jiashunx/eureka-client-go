@@ -77,6 +77,7 @@ type PortWrapper struct {
     Port    int    `json:"$"`
 }
 
+// IsEnabled 端口是否可用
 func (wrapper *PortWrapper) IsEnabled() bool {
     return wrapper.Enabled == StrTrue
 }
@@ -222,6 +223,7 @@ func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err er
     return instance, nil
 }
 
+// Check 检查属性
 func (instance *InstanceInfo) Check() error {
     hostInfo, err := GetLocalHostInfo()
     if err != nil {

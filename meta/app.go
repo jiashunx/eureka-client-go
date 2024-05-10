@@ -5,6 +5,7 @@ import (
     "fmt"
 )
 
+// AppInfo 服务信息
 type AppInfo struct {
     Name      string          `json:"name"`
     Instances []*InstanceInfo `json:"instance"`
