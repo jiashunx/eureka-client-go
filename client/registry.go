@@ -27,7 +27,11 @@ func (client *RegistryClient) start() (response *http.CommonResponse) {
         return &http.CommonResponse{Error: nil}
     }
     server, _ := client.config.GetCurrZoneEurekaServer()
-    response = http.Register(server, client.buildInstanceInfo())
+    instance, err := client.buildInstanceInfo(client.status, meta.Added)
+    if err != nil {
+        return &http.CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
+    }
+    response = http.Register(server, instance)
     client.heartbeat = response.Error == nil && response.StatusCode == 204
     return response
 }
@@ -109,7 +113,7 @@ func (client *RegistryClient) isEnabled() (bool, error) {
 }
 
 // buildInstanceInfo 根据配置构造 *meta.InstanceInfo
-func (client *RegistryClient) buildInstanceInfo() *meta.InstanceInfo {
+func (client *RegistryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (*meta.InstanceInfo, error) {
     // TODO 待补充具体逻辑
-    return &meta.InstanceInfo{}
+    return &meta.InstanceInfo{}, nil
 }
