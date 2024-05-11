@@ -276,12 +276,12 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     ret = &AppsResponse{Apps: make([]*meta.AppInfo, 0)}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get services, reason: %v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to query service, uri: %s, reason: %v", uri, rc))
         }
     }()
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
+        ret.Error = errors.New(fmt.Sprintf("failed to query service, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -296,12 +296,12 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     }
     ij := ii.(map[string]interface{})["applications"]
     if ij == nil {
-        ret.Error = errors.New("the query yielded no results")
+        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
         return ret
     }
     ik := ij.(map[string]interface{})["application"]
     if ik == nil {
-        ret.Error = errors.New("the query yielded no results")
+        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
         return ret
     }
     for _, m := range ik.([]interface{}) {
@@ -320,12 +320,12 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     ret = &InstancesResponse{Instances: make([]*meta.InstanceInfo, 0)}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get service instances, reason: %v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %v", uri, rc))
         }
     }()
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
+        ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -340,12 +340,12 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     }
     ij := ii.(map[string]interface{})["application"]
     if ij == nil {
-        ret.Error = errors.New("the query yielded no results")
+        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
         return ret
     }
     ik := ij.(map[string]interface{})["instance"]
     if ik == nil {
-        ret.Error = errors.New("the query yielded no results")
+        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
         return ret
     }
     for _, m := range ik.([]interface{}) {
@@ -364,12 +364,12 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     ret = &InstanceResponse{}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get service instance, reason: %v", rc))
+            ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %v", uri, rc))
         }
     }()
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = ret.Response.Error
+        ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -384,7 +384,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     }
     ij := ii.(map[string]interface{})["instance"]
     if ij == nil {
-        ret.Error = errors.New("the query yielded no results")
+        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
         return ret
     }
     ret.Instance, ret.Error = meta.ParseInstanceInfo(ij.(map[string]interface{}))
