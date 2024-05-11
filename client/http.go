@@ -16,8 +16,8 @@ import (
 // HttpClient eureka客户端与服务端进行http通讯的客户端模型
 type HttpClient struct{}
 
-// DoRequest 与eureka server通讯处理
-func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, method string, uri string, payload []byte) (ret *EurekaResponse) {
+// doRequest 与eureka server通讯处理
+func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, method string, uri string, payload []byte) (ret *EurekaResponse) {
     var responses = make([]*EurekaResponse, 0)
     defer func() {
         if rc := recover(); rc != nil {
@@ -27,12 +27,15 @@ func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, metho
                 Error:        errors.New(fmt.Sprintf("failed to call eureka service, reason: %v", rc)),
                 Responses:    nil,
             })
-            for _, r := range responses {
-                r.Responses = responses
-            }
-            ret = responses[len(responses)-1]
         }
+        for _, r := range responses {
+            r.Responses = responses
+        }
+        ret = responses[len(responses)-1]
     }()
+    if server == nil {
+        panic(errors.New("EurekaServer is nil"))
+    }
     // 遍历eureka server服务地址，循环发请求直至成功
     for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
         request := &EurekaRequest{
@@ -105,21 +108,16 @@ func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, metho
         }
     }
     if len(responses) == 0 {
-        responses = append(responses, &EurekaResponse{
-            Request:      nil,
-            HttpResponse: nil,
-            Error:        errors.New("no eureka server service address available"),
-            Responses:    nil,
-        })
-    }
-    for _, r := range responses {
-        r.Responses = responses
+        panic(errors.New("no eureka server service address available"))
     }
     return responses[len(responses)-1]
 }
 
 // Register 注册新服务
 func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *CommonResponse {
+    if instance == nil {
+        return &CommonResponse{Error: errors.New("InstanceInfo is nil")}
+    }
     ret := &CommonResponse{}
     ret.Error = instance.Check()
     if ret.Error != nil {
@@ -217,8 +215,10 @@ func (client *HttpClient) SimpleChangeStatus(serviceUrl, appName, instanceId str
 // ModifyMetadata 变更元数据
 func (client *HttpClient) ModifyMetadata(server *meta.EurekaServer, appName, instanceId string, metadata map[string]string) *CommonResponse {
     requestUrl := fmt.Sprintf("/apps/%s/%s/metadata?", appName, instanceId)
-    for k, v := range metadata {
-        requestUrl = requestUrl + k + "=" + v + "&"
+    if metadata != nil {
+        for k, v := range metadata {
+            requestUrl = requestUrl + k + "=" + v + "&"
+        }
     }
     requestUrl = requestUrl[0:(len(requestUrl) - 2)]
     return client.commonHttp(200, server, "PUT", requestUrl, nil)
@@ -252,7 +252,7 @@ func (client *HttpClient) SimpleQuerySvipApps(serviceUrl, svipAddress string) *A
 // commonHttp 与eureka server通讯公共方法
 func (client *HttpClient) commonHttp(expect int, server *meta.EurekaServer, method string, url string, payload []byte) *CommonResponse {
     ret := &CommonResponse{}
-    ret.Response = client.DoRequest(expect, server, method, url, payload)
+    ret.Response = client.doRequest(expect, server, method, url, payload)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
     }
@@ -265,7 +265,12 @@ func (client *HttpClient) commonHttp(expect int, server *meta.EurekaServer, meth
 // getApps 查询服务列表
 func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *AppsResponse) {
     ret = &AppsResponse{Apps: make([]*meta.AppInfo, 0)}
-    ret.Response = client.DoRequest(200, server, "GET", uri, nil)
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("failed to get services, reason: %v", rc))
+        }
+    }()
+    ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
     }
@@ -275,11 +280,6 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     if ret.Error != nil {
         return ret
     }
-    defer func() {
-        if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get services, reason: %v", rc))
-        }
-    }()
     var ii interface{}
     ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
     if ret.Error != nil {
@@ -287,10 +287,12 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     }
     ij := ii.(map[string]interface{})["applications"]
     if ij == nil {
+        ret.Error = errors.New("the query yielded no results")
         return ret
     }
     ik := ij.(map[string]interface{})["application"]
     if ik == nil {
+        ret.Error = errors.New("the query yielded no results")
         return ret
     }
     for _, m := range ik.([]interface{}) {
@@ -307,7 +309,12 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
 // getInstances 查询服务实例列表
 func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (ret *InstancesResponse) {
     ret = &InstancesResponse{Instances: make([]*meta.InstanceInfo, 0)}
-    ret.Response = client.DoRequest(200, server, "GET", uri, nil)
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("failed to get service instances, reason: %v", rc))
+        }
+    }()
+    ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
     }
@@ -317,11 +324,6 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     if ret.Error != nil {
         return ret
     }
-    defer func() {
-        if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get service instances, reason: %v", rc))
-        }
-    }()
     var ii interface{}
     ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
     if ret.Error != nil {
@@ -329,9 +331,14 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     }
     ij := ii.(map[string]interface{})["application"]
     if ij == nil {
+        ret.Error = errors.New("the query yielded no results")
         return ret
     }
     ik := ij.(map[string]interface{})["instance"]
+    if ik == nil {
+        ret.Error = errors.New("the query yielded no results")
+        return ret
+    }
     for _, m := range ik.([]interface{}) {
         var instance *meta.InstanceInfo
         instance, ret.Error = meta.ParseInstanceInfo(m.(map[string]interface{}))
@@ -346,7 +353,12 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
 // getInstance 查询服务实例
 func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (ret *InstanceResponse) {
     ret = &InstanceResponse{}
-    ret.Response = client.DoRequest(200, server, "GET", uri, nil)
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret.Error = errors.New(fmt.Sprintf("failed to get service instance, reason: %v", rc))
+        }
+    }()
+    ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
     }
@@ -356,11 +368,6 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     if ret.Error != nil {
         return ret
     }
-    defer func() {
-        if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to get service instance, reason: %v", rc))
-        }
-    }()
     var ii interface{}
     ret.Error = json.Unmarshal([]byte(ret.Response.Body), &ii)
     if ret.Error != nil {
@@ -368,6 +375,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     }
     ij := ii.(map[string]interface{})["instance"]
     if ij == nil {
+        ret.Error = errors.New("the query yielded no results")
         return ret
     }
     ret.Instance, ret.Error = meta.ParseInstanceInfo(ij.(map[string]interface{}))
