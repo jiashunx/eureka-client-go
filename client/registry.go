@@ -32,7 +32,7 @@ func (client *RegistryClient) start() (response *CommonResponse) {
         return &CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
     }
     response = client.httpClient.Register(server, instance)
-    client.heartbeat = response.Error == nil && response.StatusCode == 204
+    client.heartbeat = response.Error == nil
     return response
 }
 
@@ -61,6 +61,17 @@ func (client *RegistryClient) heartBeat0() {
         }
         _ = client.httpClient.Heartbeat(server, client.config.AppName, client.config.InstanceId)
     }
+}
+
+// unRegister 取消注册服务
+func (client *RegistryClient) unRegister() *CommonResponse {
+    server, err := client.config.GetCurrZoneEurekaServer()
+    if err != nil {
+        return &CommonResponse{Error: err}
+    }
+    response := client.httpClient.UnRegister(server, client.config.AppName, client.config.InstanceId)
+    client.heartbeat = !(response.Error == nil)
+    return response
 }
 
 // changeStatus 变更服务状态

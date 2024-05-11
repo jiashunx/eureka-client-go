@@ -32,7 +32,8 @@ func TestEurekaClient1(t *testing.T) {
     response := client.ChangeStatus(meta.StatusUp)
     ast.Nilf(response.Error, "更新服务实例状态为UP，请求失败，失败原因：%v", response.Error)
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
-    client.Stop()
+    response = client.Stop()
+    ast.Nilf(response.Error, "停止EurekaClient失败，失败原因：%v", response.Error)
     <-time.NewTimer(2 * time.Second).C
 
     // 停止客户端后可再次启动客户端
@@ -68,7 +69,8 @@ func TestEurekaClient2(t *testing.T) {
     err = client.Start()
     ast.Nilf(err, "启动EurekaClient失败，失败原因：%v", err)
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
-    client.Stop()
+    response := client.Stop()
+    ast.Nilf(response.Error, "停止EurekaClient失败，失败原因：%v", response.Error)
     <-time.NewTimer(2 * time.Second).C
 }
 

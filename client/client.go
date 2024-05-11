@@ -41,6 +41,7 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
     client.RegistryClient = &RegistryClient{config: client.config, ctx: client.ctx}
     client.DiscoveryClient = &DiscoveryClient{config: client.config, ctx: client.ctx}
     if response := client.RegistryClient.start(); response.Error != nil {
+        client.ctxCancel()
         client.Stop()
         return response.Error
     }
@@ -49,15 +50,20 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
 }
 
 // Stop 关闭eureka客户端
-func (client *EurekaClient) Stop() {
+func (client *EurekaClient) Stop() *CommonResponse {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            break
+            return &CommonResponse{Error: errors.New("failed to stop eureka client, reason: eureka client has already been stopped")}
         default:
-            client.ctxCancel()
+            response := client.RegistryClient.unRegister()
+            if response.Error == nil {
+                client.ctxCancel()
+            }
+            return response
         }
     }
+    return &CommonResponse{Error: errors.New("failed to stop eureka client, reason: eureka client has not been started")}
 }
 
 // ChangeStatus 变更服务状态
@@ -65,7 +71,7 @@ func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResp
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has already been closed")}
+            return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has already been stopped")}
         default:
             return client.RegistryClient.changeStatus(status)
         }
@@ -78,7 +84,7 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has already been closed")}
+            return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has already been stopped")}
         default:
             return client.RegistryClient.changeMetadata(metadata)
         }
