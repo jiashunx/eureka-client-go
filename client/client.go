@@ -108,12 +108,6 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
     return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's metadata")}
 }
 
-// EnabledRegistry 开启/关闭服务注册功能
-func (client *EurekaClient) EnabledRegistry(enabled bool) *EurekaClient {
-    client.config.RegistryEnabled = &enabled
-    return client
-}
-
 // GetApp 查询服务信息
 func (client *EurekaClient) GetApp(appName string) (*meta.AppInfo, error) {
     if client.ctx != nil {
@@ -177,12 +171,6 @@ func (client *EurekaClient) GetAppsBySvip(svip string) ([]*meta.AppInfo, error) 
         }
     }
     return nil, clientNotStartedErr("failed to get apps by svip")
-}
-
-// EnableDiscovery 开启/关闭服务发现功能
-func (client *EurekaClient) EnableDiscovery(enabled bool) *EurekaClient {
-    client.config.DiscoveryEnabled = &enabled
-    return client
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
