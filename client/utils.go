@@ -6,6 +6,7 @@ import (
     "github.com/jiashunx/eureka-client-go/meta"
     "math/rand"
     "strings"
+    "time"
 )
 
 // FilterApp 查询服务信息
@@ -107,29 +108,19 @@ func RandomLoopMap(m map[string]interface{}, f func(k string, v interface{}) (bo
     for k, _ := range m {
         keys = append(keys, k)
     }
-    loop := 0
-    size := len(keys)
-    idx := rand.Intn(size)
-    for i := idx; i < size; i++ {
-        if i == idx {
-            loop++
-        }
-        if loop > 1 {
-            break
-        }
-        if i == size-1 {
-            i = -1
-            continue
-        }
-        k := keys[i]
-        t, e := f(k, m[k])
+    r := rand.New(rand.NewSource(time.Now().UnixNano()))
+    for i := len(keys) - 1; i > 0; i-- {
+        j := r.Intn(i + 1)
+        keys[i], keys[j] = keys[j], keys[i]
+    }
+    for _, key := range keys {
+        t, e := f(key, m[key])
         if e != nil {
             return e
         }
-        if t {
-            continue
+        if !t {
+            break
         }
-        break
     }
     return nil
 }
