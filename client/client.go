@@ -109,95 +109,69 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
     return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's metadata, metadata: %v", metadata)}
 }
 
-// GetApp 查询服务信息
-func (client *EurekaClient) GetApp(appName string) (*meta.AppInfo, error) {
+// AccessApp 查询可用服务信息
+func (client *EurekaClient) AccessApp(appName string) (*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service, appName: %s", appName)
+            return nil, clientHasBeenStoppedErr("failed to query available service, appName: %s", appName)
         default:
-            return client.discoveryClient.getApp(appName)
+            return client.discoveryClient.accessApp(appName)
         }
     }
-    return nil, clientNotStartedErr("failed to query the service, appName: %s", appName)
+    return nil, clientNotStartedErr("failed to query available service, appName: %s", appName)
 }
 
-// GetAppInstance 查询服务实例信息
-func (client *EurekaClient) GetAppInstance(appName, instanceId string) (*meta.InstanceInfo, error) {
+// AccessAppsByVip 查询指定vip的可用服务列表
+func (client *EurekaClient) AccessAppsByVip(vip string) ([]*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service instance, appName: %s, instanceId: %s", appName, instanceId)
+            return nil, clientHasBeenStoppedErr("failed to query available service, vip: %s", vip)
         default:
-            return client.discoveryClient.getAppInstance(appName, instanceId)
+            return client.discoveryClient.accessAppsByVip(vip)
         }
     }
-    return nil, clientNotStartedErr("failed to query the service instance, appName: %s, instanceId: %s", appName, instanceId)
+    return nil, clientNotStartedErr("failed to query available service, vip: %s", vip)
 }
 
-// GetInstance 查询服务实例信息
-func (client *EurekaClient) GetInstance(instanceId string) (*meta.InstanceInfo, error) {
+// AccessAppsBySvip 查询指定svip的可用服务列表
+func (client *EurekaClient) AccessAppsBySvip(svip string) ([]*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service instance, instanceId: %s", instanceId)
+            return nil, clientHasBeenStoppedErr("failed to query available service, svip: %s", svip)
         default:
-            return client.discoveryClient.getInstance(instanceId)
+            return client.discoveryClient.accessAppsBySvip(svip)
         }
     }
-    return nil, clientNotStartedErr("failed to query the service instance, instanceId: %s", instanceId)
+    return nil, clientNotStartedErr("failed to query available service, svip: %s", svip)
 }
 
-// GetAppsByVip 查询指定vip的服务列表
-func (client *EurekaClient) GetAppsByVip(vip string) ([]*meta.AppInfo, error) {
+// AccessInstancesByVip 查询指定vip的可用服务实例列表
+func (client *EurekaClient) AccessInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service, vip: %s", vip)
+            return nil, clientHasBeenStoppedErr("failed to query available service instance, vip: %s", vip)
         default:
-            return client.discoveryClient.getAppsByVip(vip)
+            return client.discoveryClient.accessInstancesByVip(vip)
         }
     }
-    return nil, clientNotStartedErr("failed to query the service, vip: %s", vip)
+    return nil, clientNotStartedErr("failed to query available service instance, vip: %s", vip)
 }
 
-// GetAppsBySvip 查询指定svip的服务列表
-func (client *EurekaClient) GetAppsBySvip(svip string) ([]*meta.AppInfo, error) {
+// AccessInstancesBySvip 查询指定svip的可用服务实例列表
+func (client *EurekaClient) AccessInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service, svip: %s", svip)
+            return nil, clientHasBeenStoppedErr("failed to query available service instance, svip: %s", svip)
         default:
-            return client.discoveryClient.getAppsBySvip(svip)
+            return client.discoveryClient.accessInstancesBySvip(svip)
         }
     }
-    return nil, clientNotStartedErr("failed to query the service, svip: %s", svip)
-}
-
-// GetInstancesByVip 查询指定vip的服务实例列表
-func (client *EurekaClient) GetInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service instance, vip: %s", vip)
-        default:
-            return client.discoveryClient.getInstancesByVip(vip)
-        }
-    }
-    return nil, clientNotStartedErr("failed to query the service instance, vip: %s", vip)
-}
-
-// GetInstancesBySvip 查询指定svip的服务实例列表
-func (client *EurekaClient) GetInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to query the service instance, svip: %s", svip)
-        default:
-            return client.discoveryClient.getInstancesBySvip(svip)
-        }
-    }
-    return nil, clientNotStartedErr("failed to query the service instance, svip: %s", svip)
+    return nil, clientNotStartedErr("failed to query available service instance, svip: %s", svip)
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端

@@ -29,6 +29,19 @@ func (app *AppInfo) Copy() *AppInfo {
     return newApp
 }
 
+// AvailableInstances 获取可用服务实例
+func (app *AppInfo) AvailableInstances() []*InstanceInfo {
+    instances := make([]*InstanceInfo, 0)
+    if app != nil && app.Instances != nil {
+        for _, instance := range app.Instances {
+            if instance != nil && instance.Status == StatusUp {
+                instances = append(instances, instance.Copy())
+            }
+        }
+    }
+    return instances
+}
+
 // ParseAppInfo 从map中解析服务实例信息
 func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err error) {
     defer func() {

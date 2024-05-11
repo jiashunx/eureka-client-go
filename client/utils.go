@@ -8,8 +8,8 @@ import (
     "strings"
 )
 
-// GetApp 查询服务信息
-func GetApp(apps []*meta.AppInfo, appName string) *meta.AppInfo {
+// FilterApp 查询服务信息
+func FilterApp(apps []*meta.AppInfo, appName string) *meta.AppInfo {
     if apps == nil || appName == "" {
         return nil
     }
@@ -21,46 +21,8 @@ func GetApp(apps []*meta.AppInfo, appName string) *meta.AppInfo {
     return nil
 }
 
-// GetAppInstance 查询服务实例信息
-func GetAppInstance(apps []*meta.AppInfo, appName, instanceId string) *meta.InstanceInfo {
-    if apps == nil || appName == "" || instanceId == "" {
-        return nil
-    }
-    for _, app := range apps {
-        if strings.ToUpper(app.Name) == strings.ToUpper(appName) {
-            if app.Instances == nil {
-                continue
-            }
-            for _, instance := range app.Instances {
-                if instance.InstanceId == instanceId {
-                    return instance
-                }
-            }
-        }
-    }
-    return nil
-}
-
-// GetInstance 查询服务实例信息
-func GetInstance(apps []*meta.AppInfo, instanceId string) *meta.InstanceInfo {
-    if apps == nil || instanceId == "" {
-        return nil
-    }
-    for _, app := range apps {
-        if app.Instances == nil {
-            continue
-        }
-        for _, instance := range app.Instances {
-            if instance.InstanceId == instanceId {
-                return instance
-            }
-        }
-    }
-    return nil
-}
-
-// GetAppsByVip 查询有相同vip的服务列表
-func GetAppsByVip(apps []*meta.AppInfo, vip string) []*meta.AppInfo {
+// FilterAppsByVip 查询有相同vip的服务列表
+func FilterAppsByVip(apps []*meta.AppInfo, vip string) []*meta.AppInfo {
     vipApps := make([]*meta.AppInfo, 0)
     if apps == nil || vip == "" {
         return vipApps
@@ -85,8 +47,8 @@ func GetAppsByVip(apps []*meta.AppInfo, vip string) []*meta.AppInfo {
     return vipApps
 }
 
-// GetAppsBySvip 查询有相同svip的服务列表
-func GetAppsBySvip(apps []*meta.AppInfo, svip string) []*meta.AppInfo {
+// FilterAppsBySvip 查询有相同svip的服务列表
+func FilterAppsBySvip(apps []*meta.AppInfo, svip string) []*meta.AppInfo {
     svipApps := make([]*meta.AppInfo, 0)
     if apps == nil || svip == "" {
         return svipApps
@@ -111,20 +73,20 @@ func GetAppsBySvip(apps []*meta.AppInfo, svip string) []*meta.AppInfo {
     return svipApps
 }
 
-// GetInstancesByVip 查询有相同vip的服务实例列表
-func GetInstancesByVip(apps []*meta.AppInfo, vip string) []*meta.InstanceInfo {
+// FilterInstancesByVip 查询有相同vip的服务实例列表
+func FilterInstancesByVip(apps []*meta.AppInfo, vip string) []*meta.InstanceInfo {
     instances := make([]*meta.InstanceInfo, 0)
-    vipApps := GetAppsByVip(apps, vip)
+    vipApps := FilterAppsByVip(apps, vip)
     for _, app := range vipApps {
         instances = append(instances, app.Instances...)
     }
     return instances
 }
 
-// GetInstancesBySvip 查询有相同svip的服务信息列表
-func GetInstancesBySvip(apps []*meta.AppInfo, svip string) []*meta.InstanceInfo {
+// FilterInstancesBySvip 查询有相同svip的服务信息列表
+func FilterInstancesBySvip(apps []*meta.AppInfo, svip string) []*meta.InstanceInfo {
     instances := make([]*meta.InstanceInfo, 0)
-    svipApps := GetAppsBySvip(apps, svip)
+    svipApps := FilterAppsBySvip(apps, svip)
     for _, app := range svipApps {
         instances = append(instances, app.Instances...)
     }
