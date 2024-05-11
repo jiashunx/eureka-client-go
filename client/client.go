@@ -3,23 +3,24 @@ package client
 import (
     "context"
     "errors"
+    "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
 )
 
 // clientNotStartedErr 错误:客户端未启动
-var clientNotStartedErr = func(msg string) error {
-    if msg == "" {
+var clientNotStartedErr = func(format string, a ...any) error {
+    if format == "" {
         return errors.New("eureka client has not been started")
     }
-    return errors.New(msg + ", reason: eureka client has not been started")
+    return errors.New(fmt.Sprintf(format, a...) + ", reason: eureka client has not been started")
 }
 
 // clientHasBeenStoppedErr 错误:客户端已关闭
-var clientHasBeenStoppedErr = func(msg string) error {
-    if msg == "" {
+var clientHasBeenStoppedErr = func(format string, a ...any) error {
+    if format == "" {
         return errors.New("eureka client has already been stopped")
     }
-    return errors.New(msg + ", reason: eureka client has already been stopped")
+    return errors.New(fmt.Sprintf(format, a...) + ", reason: eureka client has already been stopped")
 }
 
 // EurekaClient eureka客户端模型
@@ -87,12 +88,12 @@ func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResp
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &CommonResponse{Error: clientHasBeenStoppedErr("failed to change service instance's status")}
+            return &CommonResponse{Error: clientHasBeenStoppedErr("failed to change service instance's status, status: %v", status)}
         default:
             return client.registryClient.changeStatus(status)
         }
     }
-    return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's status")}
+    return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's status, status: %v", status)}
 }
 
 // ChangeMetadata 变更元数据
@@ -100,12 +101,12 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &CommonResponse{Error: clientHasBeenStoppedErr("failed to change service instance's metadata")}
+            return &CommonResponse{Error: clientHasBeenStoppedErr("failed to change service instance's metadata, metadata: %v", metadata)}
         default:
             return client.registryClient.changeMetadata(metadata)
         }
     }
-    return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's metadata")}
+    return &CommonResponse{Error: clientNotStartedErr("failed to change service instance's metadata, metadata: %v", metadata)}
 }
 
 // GetApp 查询服务信息
@@ -113,12 +114,12 @@ func (client *EurekaClient) GetApp(appName string) (*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to get app")
+            return nil, clientHasBeenStoppedErr("failed to query the service, appName: %s", appName)
         default:
             return client.discoveryClient.getApp(appName)
         }
     }
-    return nil, clientNotStartedErr("failed to get app")
+    return nil, clientNotStartedErr("failed to query the service, appName: %s", appName)
 }
 
 // GetAppInstance 查询服务实例信息
@@ -126,12 +127,12 @@ func (client *EurekaClient) GetAppInstance(appName, instanceId string) (*meta.In
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to get app instance")
+            return nil, clientHasBeenStoppedErr("failed to query the service instance, appName: %s, instanceId: %s", appName, instanceId)
         default:
             return client.discoveryClient.getAppInstance(appName, instanceId)
         }
     }
-    return nil, clientNotStartedErr("failed to get app instance")
+    return nil, clientNotStartedErr("failed to query the service instance, appName: %s, instanceId: %s", appName, instanceId)
 }
 
 // GetInstance 查询服务实例信息
@@ -139,38 +140,64 @@ func (client *EurekaClient) GetInstance(instanceId string) (*meta.InstanceInfo, 
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to get instance")
+            return nil, clientHasBeenStoppedErr("failed to query the service instance, instanceId: %s", instanceId)
         default:
             return client.discoveryClient.getInstance(instanceId)
         }
     }
-    return nil, clientNotStartedErr("failed to get instance")
+    return nil, clientNotStartedErr("failed to query the service instance, instanceId: %s", instanceId)
 }
 
-// GetAppsByVip 查询有相同vip的服务信息列表
+// GetAppsByVip 查询指定vip的服务列表
 func (client *EurekaClient) GetAppsByVip(vip string) ([]*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to get apps by vip")
+            return nil, clientHasBeenStoppedErr("failed to query the service, vip: %s", vip)
         default:
             return client.discoveryClient.getAppsByVip(vip)
         }
     }
-    return nil, clientNotStartedErr("failed to get apps by vip")
+    return nil, clientNotStartedErr("failed to query the service, vip: %s", vip)
 }
 
-// GetAppsBySvip 查询有相同svip的服务信息列表
+// GetAppsBySvip 查询指定svip的服务列表
 func (client *EurekaClient) GetAppsBySvip(svip string) ([]*meta.AppInfo, error) {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr("failed to get apps by svip")
+            return nil, clientHasBeenStoppedErr("failed to query the service, svip: %s", svip)
         default:
             return client.discoveryClient.getAppsBySvip(svip)
         }
     }
-    return nil, clientNotStartedErr("failed to get apps by svip")
+    return nil, clientNotStartedErr("failed to query the service, svip: %s", svip)
+}
+
+// GetInstancesByVip 查询指定vip的服务实例列表
+func (client *EurekaClient) GetInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
+    if client.ctx != nil {
+        select {
+        case <-client.ctx.Done():
+            return nil, clientHasBeenStoppedErr("failed to query the service instance, vip: %s", vip)
+        default:
+            return client.discoveryClient.getInstancesByVip(vip)
+        }
+    }
+    return nil, clientNotStartedErr("failed to query the service instance, vip: %s", vip)
+}
+
+// GetInstancesBySvip 查询指定svip的服务实例列表
+func (client *EurekaClient) GetInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
+    if client.ctx != nil {
+        select {
+        case <-client.ctx.Done():
+            return nil, clientHasBeenStoppedErr("failed to query the service instance, svip: %s", svip)
+        default:
+            return client.discoveryClient.getInstancesBySvip(svip)
+        }
+    }
+    return nil, clientNotStartedErr("failed to query the service instance, svip: %s", svip)
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端

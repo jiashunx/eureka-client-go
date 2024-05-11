@@ -2,6 +2,7 @@ package client
 
 import (
     "errors"
+    "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
@@ -79,10 +80,33 @@ func (discovery *discoveryClient) getApp(appName string) (*meta.AppInfo, error) 
     if _, err := discovery.isEnabled(); err != nil {
         return nil, err
     }
-    for _, apps := range discovery.Apps {
-        return GetApp(apps, appName), nil
+    var app *meta.AppInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            app = GetApp(apps, appName)
+            if app != nil {
+                return app, nil
+            }
+        }
     }
-    return nil, nil
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            app = GetApp(v.([]*meta.AppInfo), appName)
+            if app != nil {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && app == nil {
+        err = errors.New(fmt.Sprintf("no service found, appName: %s", appName))
+    }
+    return app, err
 }
 
 // getAppInstance 查询服务实例信息
@@ -90,10 +114,33 @@ func (discovery *discoveryClient) getAppInstance(appName, instanceId string) (*m
     if _, err := discovery.isEnabled(); err != nil {
         return nil, err
     }
-    for _, apps := range discovery.Apps {
-        return GetAppInstance(apps, appName, instanceId), nil
+    var instance *meta.InstanceInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            instance = GetAppInstance(apps, appName, instanceId)
+            if instance != nil {
+                return instance, nil
+            }
+        }
     }
-    return nil, nil
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            instance = GetAppInstance(v.([]*meta.AppInfo), appName, instanceId)
+            if instance != nil {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && instance == nil {
+        err = errors.New(fmt.Sprintf("no service instance found, appName: %s, instanceId: %s", appName, instanceId))
+    }
+    return instance, err
 }
 
 // getInstance 查询服务实例信息
@@ -101,30 +148,167 @@ func (discovery *discoveryClient) getInstance(instanceId string) (*meta.Instance
     if _, err := discovery.isEnabled(); err != nil {
         return nil, err
     }
-    for _, apps := range discovery.Apps {
-        return GetInstance(apps, instanceId), nil
+    var instance *meta.InstanceInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            instance = GetInstance(apps, instanceId)
+            if instance != nil {
+                return instance, nil
+            }
+        }
     }
-    return nil, nil
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            instance = GetInstance(v.([]*meta.AppInfo), instanceId)
+            if instance != nil {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && instance == nil {
+        err = errors.New(fmt.Sprintf("no service instance found, instanceId: %s", instanceId))
+    }
+    return instance, err
 }
 
-// getAppsByVip 查询有相同vip的服务信息列表
+// getAppsByVip 查询指定vip的服务列表
 func (discovery *discoveryClient) getAppsByVip(vip string) ([]*meta.AppInfo, error) {
     if _, err := discovery.isEnabled(); err != nil {
         return nil, err
     }
-    for _, apps := range discovery.Apps {
-        return GetAppsByVip(apps, vip), nil
+    var vipApps []*meta.AppInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            vipApps = GetAppsByVip(apps, vip)
+            if vipApps != nil && len(vipApps) > 0 {
+                return vipApps, nil
+            }
+        }
     }
-    return nil, nil
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            vipApps = GetAppsByVip(v.([]*meta.AppInfo), vip)
+            if vipApps != nil && len(vipApps) > 0 {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && (vipApps == nil || len(vipApps) == 0) {
+        err = errors.New(fmt.Sprintf("no service found, vip: %s", vip))
+    }
+    return vipApps, err
 }
 
-// getAppsBySvip 查询有相同svip的服务信息列表
+// getAppsBySvip 查询指定svip的服务列表
 func (discovery *discoveryClient) getAppsBySvip(svip string) ([]*meta.AppInfo, error) {
     if _, err := discovery.isEnabled(); err != nil {
         return nil, err
     }
-    for _, apps := range discovery.Apps {
-        return GetAppsBySvip(apps, svip), nil
+    var svipApps []*meta.AppInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            svipApps = GetAppsBySvip(apps, svip)
+            if svipApps != nil && len(svipApps) > 0 {
+                return svipApps, nil
+            }
+        }
     }
-    return nil, nil
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            svipApps = GetAppsBySvip(v.([]*meta.AppInfo), svip)
+            if svipApps != nil && len(svipApps) > 0 {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && (svipApps == nil || len(svipApps) == 0) {
+        err = errors.New(fmt.Sprintf("no service found, svip: %s", svip))
+    }
+    return svipApps, err
+}
+
+// getInstancesByVip 查询指定vip的服务实例列表
+func (discovery *discoveryClient) getInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    var instances []*meta.InstanceInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            instances = GetInstancesByVip(apps, vip)
+            if instances != nil && len(instances) > 0 {
+                return instances, nil
+            }
+        }
+    }
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            instances = GetInstancesByVip(v.([]*meta.AppInfo), vip)
+            if instances != nil && len(instances) > 0 {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && (instances == nil || len(instances) == 0) {
+        err = errors.New(fmt.Sprintf("no service instance found, vip: %s", vip))
+    }
+    return instances, err
+}
+
+// getInstancesBySvip 查询指定svip的服务实例列表
+func (discovery *discoveryClient) getInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    var instances []*meta.InstanceInfo
+    config := discovery.client.config
+    if *config.PreferSameZoneEureka {
+        if apps, ok := discovery.Apps[config.Zone]; ok {
+            instances = GetInstancesBySvip(apps, svip)
+            if instances != nil && len(instances) > 0 {
+                return instances, nil
+            }
+        }
+    }
+    anyMap := make(map[string]interface{})
+    for k, v := range discovery.Apps {
+        anyMap[k] = v
+    }
+    err := RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
+        if v != nil {
+            instances = GetInstancesBySvip(v.([]*meta.AppInfo), svip)
+            if instances != nil && len(instances) > 0 {
+                return false, nil
+            }
+        }
+        return true, nil
+    })
+    if err == nil && (instances == nil || len(instances) == 0) {
+        err = errors.New(fmt.Sprintf("no service instance found, svip: %s", svip))
+    }
+    return instances, err
 }
