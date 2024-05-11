@@ -265,6 +265,8 @@ func (config *EurekaConfig) Check() error {
     ncc := &ClientConfig{}
     if cc == nil {
         cc = &ClientConfig{}
+        cc.RegistryEnabled = &False
+        cc.DiscoveryEnabled = &False
     }
     ncc.EurekaServerUsername = strings.TrimSpace(cc.EurekaServerUsername)
     ncc.EurekaServerPassword = strings.TrimSpace(cc.EurekaServerPassword)

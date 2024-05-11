@@ -75,12 +75,7 @@ func TestEurekaClient2(t *testing.T) {
 // TestEurekaClient3 客户端测试样例3
 func TestEurekaClient3(t *testing.T) {
     ast := assert.New(t)
-    client, err := NewEurekaClient(&meta.EurekaConfig{
-        ClientConfig: &meta.ClientConfig{
-            DiscoveryEnabled: &meta.False,
-            RegistryEnabled:  &meta.False,
-        },
-    })
+    client, err := NewEurekaClient(&meta.EurekaConfig{})
     ast.Nilf(err, "创建EurekaClient失败，失败原因：%v", err)
     // 获取与eureka server通讯的http客户端
     httpClient := client.HttpClient
