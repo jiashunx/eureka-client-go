@@ -1,28 +1,26 @@
 package client
 
 import (
-    "context"
     "errors"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
 
-// DiscoveryClient eureka服务发现客户端
-type DiscoveryClient struct {
-    config     *meta.EurekaConfig
-    ctx        context.Context
-    httpClient *HttpClient
-    Apps       map[string][]*meta.AppInfo // zone与服务列表映射
+// discoveryClient eureka服务发现客户端
+type discoveryClient struct {
+    client *EurekaClient
+    Apps   map[string][]*meta.AppInfo // zone与服务列表映射
 }
 
 // start 启动eureka服务发现客户端
-func (client *DiscoveryClient) start() {
-    go client.discovery0()
-    go client.discovery()
+func (discovery *discoveryClient) start() {
+    go discovery.discovery0()
+    go discovery.discovery()
 }
 
 // discovery 具体服务发现处理逻辑
-func (client *DiscoveryClient) discovery() {
+func (discovery *discoveryClient) discovery() {
+    client := discovery.client
     ticker := time.NewTicker(time.Duration(client.config.RegistryFetchIntervalSeconds) * time.Second)
 FL:
     for {
@@ -32,15 +30,16 @@ FL:
             ticker.Stop()
             break FL
         default:
-            if b, _ := client.isEnabled(); b {
-                go client.discovery0()
+            if b, _ := discovery.isEnabled(); b {
+                go discovery.discovery0()
             }
         }
     }
 }
 
 // discovery 具体服务发现处理逻辑
-func (client *DiscoveryClient) discovery0() {
+func (discovery *discoveryClient) discovery0() {
+    client := discovery.client
     servers, err := client.config.GetAllZoneEurekaServers()
     if err != nil {
         return
@@ -48,7 +47,7 @@ func (client *DiscoveryClient) discovery0() {
     c := make(chan map[string][]*meta.AppInfo)
     for zone, server := range servers {
         go func(zone string, server *meta.EurekaServer) {
-            response := client.httpClient.QueryApps(server)
+            response := client.HttpClient.QueryApps(server)
             if response.Error != nil {
                 c <- map[string][]*meta.AppInfo{}
                 return
@@ -63,11 +62,12 @@ func (client *DiscoveryClient) discovery0() {
         }
     }
     close(c)
-    client.Apps = apps
+    discovery.Apps = apps
 }
 
 // isEnabled 服务发现功能是否开启
-func (client *DiscoveryClient) isEnabled() (bool, error) {
+func (discovery *discoveryClient) isEnabled() (bool, error) {
+    client := discovery.client
     if !*client.config.DiscoveryEnabled {
         return false, errors.New("eureka client's service discovery feature is not enabled")
     }

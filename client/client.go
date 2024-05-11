@@ -11,8 +11,8 @@ type EurekaClient struct {
     config          *meta.EurekaConfig
     ctx             context.Context
     ctxCancel       context.CancelFunc
-    RegistryClient  *RegistryClient
-    DiscoveryClient *DiscoveryClient
+    registryClient  *registryClient
+    discoveryClient *discoveryClient
     HttpClient      *HttpClient
 }
 
@@ -38,14 +38,14 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
         }
     }
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
-    client.RegistryClient = &RegistryClient{config: client.config, ctx: client.ctx}
-    client.DiscoveryClient = &DiscoveryClient{config: client.config, ctx: client.ctx}
-    if response := client.RegistryClient.start(); response.Error != nil {
+    client.registryClient = &registryClient{client: client}
+    client.discoveryClient = &discoveryClient{client: client}
+    if response := client.registryClient.start(); response.Error != nil {
         client.ctxCancel()
         client.Stop()
         return response.Error
     }
-    client.DiscoveryClient.start()
+    client.discoveryClient.start()
     return nil
 }
 
@@ -56,7 +56,7 @@ func (client *EurekaClient) Stop() *CommonResponse {
         case <-client.ctx.Done():
             return &CommonResponse{Error: errors.New("failed to stop eureka client, reason: eureka client has already been stopped")}
         default:
-            response := client.RegistryClient.unRegister()
+            response := client.registryClient.unRegister()
             if response.Error == nil {
                 client.ctxCancel()
             }
@@ -73,7 +73,7 @@ func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResp
         case <-client.ctx.Done():
             return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has already been stopped")}
         default:
-            return client.RegistryClient.changeStatus(status)
+            return client.registryClient.changeStatus(status)
         }
     }
     return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has not been started")}
@@ -86,22 +86,22 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
         case <-client.ctx.Done():
             return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has already been stopped")}
         default:
-            return client.RegistryClient.changeMetadata(metadata)
+            return client.registryClient.changeMetadata(metadata)
         }
     }
     return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has not been started")}
 }
 
 // EnabledRegistry 开启/关闭服务注册功能
-func (client *EurekaClient) EnabledRegistry(enabled bool) *RegistryClient {
+func (client *EurekaClient) EnabledRegistry(enabled bool) *EurekaClient {
     client.config.RegistryEnabled = &enabled
-    return client.RegistryClient
+    return client
 }
 
 // EnableDiscovery 开启/关闭服务发现功能
-func (client *EurekaClient) EnableDiscovery(enabled bool) *DiscoveryClient {
+func (client *EurekaClient) EnableDiscovery(enabled bool) *EurekaClient {
     client.config.DiscoveryEnabled = &enabled
-    return client.DiscoveryClient
+    return client
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
@@ -121,8 +121,8 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
         config:          eurekaConfig,
         ctx:             nil,
         ctxCancel:       nil,
-        RegistryClient:  &RegistryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
-        DiscoveryClient: &DiscoveryClient{config: eurekaConfig, ctx: nil, httpClient: httpClient},
+        registryClient:  nil,
+        discoveryClient: nil,
         HttpClient:      httpClient,
     }, nil
 }
