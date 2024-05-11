@@ -17,8 +17,22 @@ import (
 type HttpClient struct{}
 
 // DoRequest 与eureka server通讯处理
-func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, method string, uri string, payload []byte) *EurekaResponse {
+func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, method string, uri string, payload []byte) (ret *EurekaResponse) {
     var responses = make([]*EurekaResponse, 0)
+    defer func() {
+        if rc := recover(); rc != nil {
+            responses = append(responses, &EurekaResponse{
+                Request:      nil,
+                HttpResponse: nil,
+                Error:        errors.New(fmt.Sprintf("failed to call eureka service, reason: %v", rc)),
+                Responses:    nil,
+            })
+            for _, r := range responses {
+                r.Responses = responses
+            }
+            ret = responses[len(responses)-1]
+        }
+    }()
     // 遍历eureka server服务地址，循环发请求直至成功
     for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
         request := &EurekaRequest{
@@ -83,26 +97,25 @@ func (client *HttpClient) DoRequest(expect int, server *meta.EurekaServer, metho
             }
             _ = httpResponse.Body.Close()
         }
-        if response.Error == nil && httpResponse.StatusCode == expect {
-            break
+        if response.Error == nil {
+            if httpResponse.StatusCode == expect {
+                break
+            }
+            response.Error = errors.New(fmt.Sprintf("the http response code is incorrect, expect: %d, actual: %d", expect, response.HttpResponse.StatusCode))
         }
+    }
+    if len(responses) == 0 {
+        responses = append(responses, &EurekaResponse{
+            Request:      nil,
+            HttpResponse: nil,
+            Error:        errors.New("no eureka server service address available"),
+            Responses:    nil,
+        })
     }
     for _, r := range responses {
         r.Responses = responses
     }
-    if len(responses) == 0 {
-        return &EurekaResponse{
-            Request:      nil,
-            HttpResponse: nil,
-            Error:        errors.New("no eureka server service address available"),
-            Responses:    responses,
-        }
-    }
-    response := responses[len(responses)-1]
-    if response.Error == nil && response.HttpResponse.StatusCode != expect {
-        response.Error = errors.New(fmt.Sprintf("the http response code is incorrect, expect: %d, actual: %d", expect, response.HttpResponse.StatusCode))
-    }
-    return response
+    return responses[len(responses)-1]
 }
 
 // Register 注册新服务
