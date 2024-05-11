@@ -1,4 +1,4 @@
-package http
+package client
 
 import (
     "fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 // 所有eureka server均无安全认证
-var serviceUrl = "http://127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
+var serviceUrl1 = "http://127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
 
 // 部分eureka server有安全认证
 var serviceUrl2 = "http://admin:123123@127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
@@ -27,11 +27,11 @@ var instance = &meta.InstanceInfo{
     SecureVipAddress: meta.DefaultSecureVirtualHostname,
 }
 
-var httpClient = &Client{}
+var httpClient = &HttpClient{}
 
 func TestRegister(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleRegister(serviceUrl, instance)
+    response := httpClient.SimpleRegister(serviceUrl1, instance)
     ast.Nilf(response.Error, "Register处理失败，失败原因：%s", response.Error)
     ast.Equal(204, response.StatusCode)
     fmt.Println("Register请求方法:", response.Response.Request.Method)
@@ -42,7 +42,7 @@ func TestRegister(t *testing.T) {
 
 func TestHeartbeat(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleHeartbeat(serviceUrl, instance.AppName, instance.InstanceId)
+    response := httpClient.SimpleHeartbeat(serviceUrl1, instance.AppName, instance.InstanceId)
     ast.Nilf(response.Error, "Heartbeat处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("Heartbeat请求方法:", response.Response.Request.Method)
@@ -52,7 +52,7 @@ func TestHeartbeat(t *testing.T) {
 
 func TestQueryApps(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQueryApps(serviceUrl)
+    response := httpClient.SimpleQueryApps(serviceUrl1)
     ast.Nilf(response.Error, "QueryApps处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QueryApps请求方法:", response.Response.Request.Method)
@@ -64,7 +64,7 @@ func TestQueryApps(t *testing.T) {
 
 func TestQueryApp(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQueryApp(serviceUrl, instance.AppName)
+    response := httpClient.SimpleQueryApp(serviceUrl1, instance.AppName)
     ast.Nilf(response.Error, "QueryApp处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QueryApp请求方法:", response.Response.Request.Method)
@@ -76,7 +76,7 @@ func TestQueryApp(t *testing.T) {
 
 func TestQueryAppInstance(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQueryAppInstance(serviceUrl, instance.AppName, instance.InstanceId)
+    response := httpClient.SimpleQueryAppInstance(serviceUrl1, instance.AppName, instance.InstanceId)
     ast.Nilf(response.Error, "QueryAppInstance处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QueryAppInstance请求方法:", response.Response.Request.Method)
@@ -88,7 +88,7 @@ func TestQueryAppInstance(t *testing.T) {
 
 func TestQueryInstance(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQueryInstance(serviceUrl, instance.InstanceId)
+    response := httpClient.SimpleQueryInstance(serviceUrl1, instance.InstanceId)
     ast.Nilf(response.Error, "QueryInstance处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QueryInstance请求方法:", response.Response.Request.Method)
@@ -100,7 +100,7 @@ func TestQueryInstance(t *testing.T) {
 
 func TestChangeStatus(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleChangeStatus(serviceUrl, instance.AppName, instance.InstanceId, meta.StatusOutOfService)
+    response := httpClient.SimpleChangeStatus(serviceUrl1, instance.AppName, instance.InstanceId, meta.StatusOutOfService)
     ast.Nilf(response.Error, "ChangeStatus处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("ChangeStatus请求方法:", response.Response.Request.Method)
@@ -110,7 +110,7 @@ func TestChangeStatus(t *testing.T) {
 
 func TestModifyMetadata(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleModifyMetadata(serviceUrl, instance.AppName, instance.InstanceId, map[string]string{"hello": "world"})
+    response := httpClient.SimpleModifyMetadata(serviceUrl1, instance.AppName, instance.InstanceId, map[string]string{"hello": "world"})
     ast.Nilf(response.Error, "ModifyMetadata处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("ModifyMetadata请求方法:", response.Response.Request.Method)
@@ -120,7 +120,7 @@ func TestModifyMetadata(t *testing.T) {
 
 func TestQueryVipApps(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQueryVipApps(serviceUrl, instance.VipAddress)
+    response := httpClient.SimpleQueryVipApps(serviceUrl1, instance.VipAddress)
     ast.Nilf(response.Error, "QueryVipApps处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QueryVipApps请求方法:", response.Response.Request.Method)
@@ -132,7 +132,7 @@ func TestQueryVipApps(t *testing.T) {
 
 func TestQuerySvipApps(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleQuerySvipApps(serviceUrl, instance.SecureVipAddress)
+    response := httpClient.SimpleQuerySvipApps(serviceUrl1, instance.SecureVipAddress)
     ast.Nilf(response.Error, "QuerySvipApps处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("QuerySvipApps请求方法:", response.Response.Request.Method)
@@ -144,7 +144,7 @@ func TestQuerySvipApps(t *testing.T) {
 
 func TestUnRegister(t *testing.T) {
     ast := assert.New(t)
-    response := httpClient.SimpleUnRegister(serviceUrl, instance.AppName, instance.InstanceId)
+    response := httpClient.SimpleUnRegister(serviceUrl1, instance.AppName, instance.InstanceId)
     ast.Nilf(response.Error, "UnRegister处理失败，失败原因：%s", response.Error)
     ast.Equal(200, response.StatusCode)
     fmt.Println("UnRegister请求方法:", response.Response.Request.Method)

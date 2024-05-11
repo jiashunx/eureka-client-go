@@ -3,7 +3,6 @@ package client
 import (
     "context"
     "errors"
-    "github.com/jiashunx/eureka-client-go/http"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
@@ -12,25 +11,25 @@ import (
 type RegistryClient struct {
     config     *meta.EurekaConfig
     ctx        context.Context
-    httpClient *http.Client
+    httpClient *HttpClient
     heartbeat  bool                // 是否开启心跳
     status     meta.InstanceStatus // 服务实例状态
 }
 
 // start 启动eureka服务注册客户端
-func (client *RegistryClient) start() (response *http.CommonResponse) {
+func (client *RegistryClient) start() (response *CommonResponse) {
     client.status = meta.StatusStarting
     if *client.config.InstanceEnabledOnIt {
         client.status = meta.StatusUp
     }
     go client.heartBeat()
     if _, err := client.isEnabled(); err != nil {
-        return &http.CommonResponse{Error: nil}
+        return &CommonResponse{Error: nil}
     }
     server, _ := client.config.GetCurrZoneEurekaServer()
     instance, err := client.buildInstanceInfo(client.status, meta.Added)
     if err != nil {
-        return &http.CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
+        return &CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
     }
     response = client.httpClient.Register(server, instance)
     client.heartbeat = response.Error == nil && response.StatusCode == 204
@@ -65,13 +64,13 @@ func (client *RegistryClient) heartBeat0() {
 }
 
 // changeStatus 变更服务状态
-func (client *RegistryClient) changeStatus(status meta.InstanceStatus) (response *http.CommonResponse) {
+func (client *RegistryClient) changeStatus(status meta.InstanceStatus) (response *CommonResponse) {
     if _, err := client.isEnabled(); err != nil {
-        return &http.CommonResponse{Error: err}
+        return &CommonResponse{Error: err}
     }
     server, err := client.config.GetCurrZoneEurekaServer()
     if err != nil {
-        return &http.CommonResponse{Error: err}
+        return &CommonResponse{Error: err}
     }
     switch status {
     case meta.StatusUp, meta.StatusDown, meta.StatusStarting, meta.StatusOutOfService, meta.StatusUnknown:
@@ -82,19 +81,19 @@ func (client *RegistryClient) changeStatus(status meta.InstanceStatus) (response
         client.status = status
         client.heartbeat = status == meta.StatusUp
     default:
-        response = &http.CommonResponse{Error: errors.New("failed to change service instance's status, reason: status is invalid: " + string(status))}
+        response = &CommonResponse{Error: errors.New("failed to change service instance's status, reason: status is invalid: " + string(status))}
     }
     return response
 }
 
 // changeMetadata 变更元数据
-func (client *RegistryClient) changeMetadata(metadata map[string]string) (response *http.CommonResponse) {
+func (client *RegistryClient) changeMetadata(metadata map[string]string) (response *CommonResponse) {
     if _, err := client.isEnabled(); err != nil {
-        return &http.CommonResponse{Error: err}
+        return &CommonResponse{Error: err}
     }
     server, err := client.config.GetCurrZoneEurekaServer()
     if err != nil {
-        return &http.CommonResponse{Error: err}
+        return &CommonResponse{Error: err}
     }
     response = client.httpClient.ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
     if response.Error == nil && response.StatusCode == 200 {

@@ -3,7 +3,6 @@ package client
 import (
     "context"
     "errors"
-    "github.com/jiashunx/eureka-client-go/http"
     "github.com/jiashunx/eureka-client-go/meta"
 )
 
@@ -14,7 +13,7 @@ type EurekaClient struct {
     ctxCancel       context.CancelFunc
     RegistryClient  *RegistryClient
     DiscoveryClient *DiscoveryClient
-    HttpClient      *http.Client
+    HttpClient      *HttpClient
 }
 
 // Start 启动eureka客户端
@@ -62,29 +61,29 @@ func (client *EurekaClient) Stop() {
 }
 
 // ChangeStatus 变更服务状态
-func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *http.CommonResponse {
+func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResponse {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &http.CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has already been closed")}
+            return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has already been closed")}
         default:
             return client.RegistryClient.changeStatus(status)
         }
     }
-    return &http.CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has not been started")}
+    return &CommonResponse{Error: errors.New("failed to change service instance's status, reason: eureka client has not been started")}
 }
 
 // ChangeMetadata 变更元数据
-func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *http.CommonResponse {
+func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonResponse {
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
-            return &http.CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has already been closed")}
+            return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has already been closed")}
         default:
             return client.RegistryClient.changeMetadata(metadata)
         }
     }
-    return &http.CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has not been started")}
+    return &CommonResponse{Error: errors.New("failed to change service instance's metadata, reason: eureka client has not been started")}
 }
 
 // EnabledRegistry 开启/关闭服务注册功能
@@ -111,7 +110,7 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     if err := eurekaConfig.Check(); err != nil {
         return nil, err
     }
-    httpClient := &http.Client{}
+    httpClient := &HttpClient{}
     return &EurekaClient{
         config:          eurekaConfig,
         ctx:             nil,

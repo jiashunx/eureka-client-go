@@ -3,7 +3,6 @@ package client
 import (
     "context"
     "errors"
-    "github.com/jiashunx/eureka-client-go/http"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
@@ -12,7 +11,7 @@ import (
 type DiscoveryClient struct {
     config     *meta.EurekaConfig
     ctx        context.Context
-    httpClient *http.Client
+    httpClient *HttpClient
     Apps       map[string][]*meta.AppInfo // zone与服务列表映射
 }
 
