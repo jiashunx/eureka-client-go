@@ -51,7 +51,7 @@ func (discovery *discoveryClient) discovery0() {
         go func(zone string, server *meta.EurekaServer) {
             response := client.HttpClient.QueryApps(server)
             if response.Error != nil {
-                c <- map[string][]*meta.AppInfo{}
+                c <- map[string][]*meta.AppInfo{zone: make([]*meta.AppInfo, 0)}
                 return
             }
             c <- map[string][]*meta.AppInfo{zone: response.Apps}
