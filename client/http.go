@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "errors"
     "fmt"
+    "github.com/google/uuid"
     "github.com/jiashunx/eureka-client-go/meta"
     "io/ioutil"
     "math"
@@ -22,6 +23,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
     defer func() {
         if rc := recover(); rc != nil {
             responses = append(responses, &EurekaResponse{
+                UUID:         strings.ReplaceAll(uuid.New().String(), "-", ""),
                 Request:      nil,
                 HttpResponse: nil,
                 Error:        errors.New(fmt.Sprintf("failed to call eureka service, reason: %v", rc)),
@@ -47,7 +49,10 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             RequestUri:   uri,
             Body:         "",
         }
-        response := &EurekaResponse{Request: request}
+        response := &EurekaResponse{
+            UUID:    strings.ReplaceAll(uuid.New().String(), "-", ""),
+            Request: request,
+        }
         if payload != nil {
             request.Body = string(payload)
         }

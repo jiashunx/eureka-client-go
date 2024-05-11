@@ -18,6 +18,7 @@ type EurekaRequest struct {
 
 // EurekaResponse 与eureka server通讯响应（包含同批次所有通讯响应）
 type EurekaResponse struct {
+    UUID         string
     HttpRequest  *http.Request
     HttpResponse *http.Response
     Body         string
