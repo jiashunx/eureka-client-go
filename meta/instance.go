@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "github.com/google/uuid"
+    "strconv"
 )
 
 // DataCenterInfo 数据中心
@@ -173,6 +174,17 @@ type InstanceInfo struct {
 // ToJson 对象转json
 func (instance *InstanceInfo) ToJson() ([]byte, error) {
     return json.Marshal(instance)
+}
+
+// ServiceUrl 获取服务实例的调用地址
+func (instance *InstanceInfo) ServiceUrl() string {
+    if instance.SecurePort != nil && instance.SecurePort.IsEnabled() && instance.SecurePort.Port > 0 {
+        return HttpsProtocol + instance.IpAddr + ":" + strconv.Itoa(instance.SecurePort.Port)
+    }
+    if instance.Port != nil && instance.Port.IsEnabled() && instance.Port.Port > 0 {
+        return HttpProtocol + instance.IpAddr + ":" + strconv.Itoa(instance.Port.Port)
+    }
+    return ""
 }
 
 // ParseInstanceInfo 从map中解析服务实例信息
