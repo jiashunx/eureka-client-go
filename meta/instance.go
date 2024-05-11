@@ -292,10 +292,10 @@ func (instance *InstanceInfo) Check() error {
         instance.HealthCheckUrl = fmt.Sprintf("%s%s:%d%s", protocol, ipAddr, port, DefaultHealthCheckUrlPath)
     }
     if instance.VipAddress == "" {
-        instance.VipAddress = DefaultVirtualHostname
+        instance.VipAddress = instance.AppName
     }
     if instance.SecureVipAddress == "" {
-        instance.SecureVipAddress = DefaultSecureVirtualHostname
+        instance.SecureVipAddress = instance.AppName
     }
     if instance.IsCoordinatingDiscoveryServer == "" {
         instance.IsCoordinatingDiscoveryServer = StrFalse

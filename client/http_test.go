@@ -28,8 +28,8 @@ var instance = &meta.InstanceInfo{
         Enabled: meta.StrTrue,
         Port:    8080,
     },
-    VipAddress:       meta.DefaultVirtualHostname,
-    SecureVipAddress: meta.DefaultSecureVirtualHostname,
+    VipAddress:       "test-http-client",
+    SecureVipAddress: "test-http-client",
 }
 
 var httpClient = &HttpClient{}

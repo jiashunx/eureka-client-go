@@ -22,8 +22,6 @@ var (
     DefaultNonSecurePortEnabled                          = &True
     DefaultSecurePort                                    = 443
     DefaultSecurePortEnabled                             = &False
-    DefaultVirtualHostname                               = "unknown"
-    DefaultSecureVirtualHostname                         = "unknown"
     DefaultStatusPageUrlPath                             = "/actuator/info"
     DefaultHomePageUrlPath                               = "/"
     DefaultHealthCheckUrlPath                            = "/actuator/health"
@@ -68,9 +66,9 @@ type InstanceConfig struct {
     SecurePort int
     // 是否启用https通讯端口, 默认: DefaultSecurePortEnabled
     SecurePortEnabled *bool
-    // 为此实例定义的虚拟主机名, 默认: DefaultVirtualHostname
+    // 为此实例定义的虚拟主机名, 默认: AppName
     VirtualHostname string
-    // 为此实例定义的安全虚拟主机名, 默认: DefaultSecureVirtualHostname
+    // 为此实例定义的安全虚拟主机名, 默认: AppName
     SecureVirtualHostname string
     // 实例的状态页面绝对URL路径, 默认为空
     StatusPageUrl string
@@ -240,11 +238,11 @@ func (config *EurekaConfig) Check() error {
     }
     nic.VirtualHostname = strings.TrimSpace(ic.VirtualHostname)
     if nic.VirtualHostname == "" {
-        nic.VirtualHostname = DefaultVirtualHostname
+        nic.VirtualHostname = nic.AppName
     }
     nic.SecureVirtualHostname = strings.TrimSpace(ic.SecureVirtualHostname)
     if nic.SecureVirtualHostname == "" {
-        nic.SecureVirtualHostname = DefaultSecureVirtualHostname
+        nic.SecureVirtualHostname = nic.AppName
     }
     nic.StatusPageUrl = strings.TrimSpace(ic.StatusPageUrl)
     nic.StatusPageUrlPath = strings.TrimSpace(ic.StatusPageUrlPath)
