@@ -216,22 +216,22 @@ func (client *HttpClient) SimpleModifyMetadata(serviceUrl, appName, instanceId s
     return client.ModifyMetadata(&meta.EurekaServer{ServiceUrl: serviceUrl}, appName, instanceId, metadata)
 }
 
-// QueryVipApps 查询指定IP下的服务列表
+// QueryVipApps 查询指定虚拟主机名下的服务列表
 func (client *HttpClient) QueryVipApps(server *meta.EurekaServer, vipAddress string) *AppsResponse {
     return client.getApps(server, fmt.Sprintf("/vips/%s", vipAddress))
 }
 
-// SimpleQueryVipApps 查询指定IP下的服务列表
+// SimpleQueryVipApps 查询指定虚拟主机名下的服务列表
 func (client *HttpClient) SimpleQueryVipApps(serviceUrl, vipAddress string) *AppsResponse {
     return client.QueryVipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, vipAddress)
 }
 
-// QuerySvipApps 查询指定安全IP下的服务列表
+// QuerySvipApps 查询指定安全虚拟主机名下的服务列表
 func (client *HttpClient) QuerySvipApps(server *meta.EurekaServer, svipAddress string) *AppsResponse {
     return client.getApps(server, fmt.Sprintf("/svips/%s", svipAddress))
 }
 
-// SimpleQuerySvipApps 查询指定安全IP下的服务列表
+// SimpleQuerySvipApps 查询指定安全虚拟主机名下的服务列表
 func (client *HttpClient) SimpleQuerySvipApps(serviceUrl, svipAddress string) *AppsResponse {
     return client.QuerySvipApps(&meta.EurekaServer{ServiceUrl: serviceUrl}, svipAddress)
 }
