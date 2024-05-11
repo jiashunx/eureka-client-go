@@ -14,6 +14,17 @@ type DataCenterInfo struct {
     Name  string `json:"name"`
 }
 
+// Copy 复制副本
+func (dc *DataCenterInfo) Copy() *DataCenterInfo {
+    if dc == nil {
+        return nil
+    }
+    return &DataCenterInfo{
+        Class: dc.Class,
+        Name:  dc.Name,
+    }
+}
+
 // ParseDataCenterInfo 从map中解析数据中心信息
 func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err error) {
     defer func() {
@@ -44,6 +55,21 @@ type LeaseInfo struct {
     LastRenewalTimestamp  int64 `json:"lastRenewalTimestamp"`
     EvictionTimestamp     int64 `json:"evictionTimestamp"`
     ServiceUpTimestamp    int64 `json:"serviceUpTimestamp"`
+}
+
+// Copy 复制副本
+func (lease *LeaseInfo) Copy() *LeaseInfo {
+    if lease == nil {
+        return nil
+    }
+    return &LeaseInfo{
+        RenewalIntervalInSecs: lease.RenewalIntervalInSecs,
+        DurationInSecs:        lease.DurationInSecs,
+        RegistrationTimestamp: lease.RegistrationTimestamp,
+        LastRenewalTimestamp:  lease.LastRenewalTimestamp,
+        EvictionTimestamp:     lease.EvictionTimestamp,
+        ServiceUpTimestamp:    lease.ServiceUpTimestamp,
+    }
 }
 
 // ParseLeaseInfo 从map中解析服务实例租约信息
@@ -81,6 +107,17 @@ type PortWrapper struct {
 // IsEnabled 端口是否可用
 func (wrapper *PortWrapper) IsEnabled() bool {
     return wrapper.Enabled == StrTrue
+}
+
+// Copy 复制副本
+func (wrapper *PortWrapper) Copy() *PortWrapper {
+    if wrapper == nil {
+        return nil
+    }
+    return &PortWrapper{
+        Enabled: wrapper.Enabled,
+        Port:    wrapper.Port,
+    }
 }
 
 // ParsePortWrapper 从map中解析端口信息
@@ -185,6 +222,43 @@ func (instance *InstanceInfo) ServiceUrl() string {
         return HttpProtocol + instance.IpAddr + ":" + strconv.Itoa(instance.Port.Port)
     }
     return ""
+}
+
+// Copy 复制副本
+func (instance *InstanceInfo) Copy() *InstanceInfo {
+    if instance == nil {
+        return nil
+    }
+    newInstance := &InstanceInfo{
+        InstanceId:                    instance.InstanceId,
+        HostName:                      instance.HostName,
+        AppName:                       instance.AppName,
+        IpAddr:                        instance.IpAddr,
+        Status:                        instance.Status,
+        OverriddenStatus:              instance.OverriddenStatus,
+        Port:                          instance.Port.Copy(),
+        SecurePort:                    instance.SecurePort.Copy(),
+        CountryId:                     instance.CountryId,
+        DataCenterInfo:                instance.DataCenterInfo.Copy(),
+        LeaseInfo:                     instance.LeaseInfo.Copy(),
+        Metadata:                      nil,
+        HomePageUrl:                   instance.HomePageUrl,
+        StatusPageUrl:                 instance.StatusPageUrl,
+        HealthCheckUrl:                instance.HealthCheckUrl,
+        VipAddress:                    instance.VipAddress,
+        SecureVipAddress:              instance.SecureVipAddress,
+        IsCoordinatingDiscoveryServer: instance.IsCoordinatingDiscoveryServer,
+        LastUpdatedTimestamp:          instance.LastUpdatedTimestamp,
+        LastDirtyTimestamp:            instance.LastDirtyTimestamp,
+        ActionType:                    instance.ActionType,
+    }
+    if instance.Metadata != nil {
+        newInstance.Metadata = make(map[string]string)
+        for k, v := range instance.Metadata {
+            newInstance.Metadata[k] = v
+        }
+    }
+    return newInstance
 }
 
 // ParseInstanceInfo 从map中解析服务实例信息

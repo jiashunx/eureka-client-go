@@ -11,6 +11,24 @@ type AppInfo struct {
     Instances []*InstanceInfo `json:"instance"`
 }
 
+// Copy 复制副本
+func (app *AppInfo) Copy() *AppInfo {
+    if app == nil {
+        return nil
+    }
+    newApp := &AppInfo{
+        Name:      app.Name,
+        Instances: nil,
+    }
+    if app.Instances != nil {
+        newApp.Instances = make([]*InstanceInfo, 0)
+        for _, instance := range app.Instances {
+            newApp.Instances = append(newApp.Instances, instance.Copy())
+        }
+    }
+    return newApp
+}
+
 // ParseAppInfo 从map中解析服务实例信息
 func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err error) {
     defer func() {
