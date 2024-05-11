@@ -21,8 +21,13 @@ var eurekaServer2 = &meta.EurekaServer{
 }
 
 var instance = &meta.InstanceInfo{
-    AppName:          "test",
-    InstanceId:       "hello",
+    AppName:    "test-http-client",
+    InstanceId: "127.0.0.1:8080",
+    IpAddr:     "127.0.0.1",
+    SecurePort: &meta.PortWrapper{
+        Enabled: meta.StrTrue,
+        Port:    8080,
+    },
     VipAddress:       meta.DefaultVirtualHostname,
     SecureVipAddress: meta.DefaultSecureVirtualHostname,
 }
