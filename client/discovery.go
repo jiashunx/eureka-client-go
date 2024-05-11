@@ -73,3 +73,58 @@ func (discovery *discoveryClient) isEnabled() (bool, error) {
     }
     return true, nil
 }
+
+// getApp 查询服务信息
+func (discovery *discoveryClient) getApp(appName string) (*meta.AppInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    for _, apps := range discovery.Apps {
+        return GetApp(apps, appName), nil
+    }
+    return nil, nil
+}
+
+// getAppInstance 查询服务实例信息
+func (discovery *discoveryClient) getAppInstance(appName, instanceId string) (*meta.InstanceInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    for _, apps := range discovery.Apps {
+        return GetAppInstance(apps, appName, instanceId), nil
+    }
+    return nil, nil
+}
+
+// getInstance 查询服务实例信息
+func (discovery *discoveryClient) getInstance(instanceId string) (*meta.InstanceInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    for _, apps := range discovery.Apps {
+        return GetInstance(apps, instanceId), nil
+    }
+    return nil, nil
+}
+
+// getAppsByVip 查询有相同vip的服务信息列表
+func (discovery *discoveryClient) getAppsByVip(vip string) ([]*meta.AppInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    for _, apps := range discovery.Apps {
+        return GetAppsByVip(apps, vip), nil
+    }
+    return nil, nil
+}
+
+// getAppsBySvip 查询有相同svip的服务信息列表
+func (discovery *discoveryClient) getAppsBySvip(svip string) ([]*meta.AppInfo, error) {
+    if _, err := discovery.isEnabled(); err != nil {
+        return nil, err
+    }
+    for _, apps := range discovery.Apps {
+        return GetAppsBySvip(apps, svip), nil
+    }
+    return nil, nil
+}
