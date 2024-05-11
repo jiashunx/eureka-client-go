@@ -56,8 +56,13 @@ func TestEurekaClient2(t *testing.T) {
             InstanceEnabledOnIt: &meta.True,
         },
         ClientConfig: &meta.ClientConfig{
-            Zone:           "zone2",
-            AvailableZones: "zone1,zone2",
+            Region: "cn",
+            Zone:   "zone2",
+            AvailableZones: map[string]string{
+                "cn":  "zone1,zone2",
+                "usa": "zone3",
+                "uk":  "zone4,zone5,zone6",
+            },
             ServiceUrlOfAllZone: map[string]string{
                 "zone1": serviceUrl,
                 "zone2": serviceUrl,

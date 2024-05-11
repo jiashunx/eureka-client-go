@@ -108,9 +108,9 @@ type ClientConfig struct {
     PreferSameZoneEureka *bool
     // 当前服务实例归属region, 默认: DefaultRegion
     Region string
-    // 当前region所有zone信息, 以逗号分隔, 默认: DefaultZone
-    AvailableZones string
-    // 当前服务实例归属zone, 若为空则以 AvailableZones 属性逗号分隔的第一个值作为当前服务实例归属zone, 默认: DefaultZone
+    // 所有region及zone信息
+    AvailableZones map[string]string
+    // 当前服务实例归属zone, 默认: DefaultZone
     Zone string
     // defaultZone的eureka server服务地址信息, 以逗号分隔, 默认: DefaultServiceUrl
     ServiceUrlOfDefaultZone string
@@ -304,13 +304,23 @@ func (config *EurekaConfig) Check() error {
     if ncc.Region == "" {
         ncc.Region = DefaultRegion
     }
-    ncc.AvailableZones = strings.TrimSpace(cc.AvailableZones)
-    if ncc.AvailableZones == "" {
-        ncc.AvailableZones = DefaultZone
-    }
     ncc.Zone = strings.TrimSpace(cc.Zone)
     if ncc.Zone == "" {
-        ncc.Zone = strings.Split(ncc.AvailableZones, ",")[0]
+        ncc.Zone = DefaultZone
+    }
+    ncc.AvailableZones = cc.AvailableZones
+    if ncc.AvailableZones == nil {
+        ncc.AvailableZones = make(map[string]string)
+    }
+    if _, ok := ncc.AvailableZones[ncc.Region]; !ok {
+        ncc.AvailableZones[ncc.Region] = ncc.Zone
+    }
+    zoneMap := make(map[string]bool)
+    for _, zone := range strings.Split(ncc.AvailableZones[ncc.Region], ",") {
+        zoneMap[strings.TrimSpace(zone)] = true
+    }
+    if _, ok := zoneMap[ncc.Zone]; !ok {
+        ncc.AvailableZones[ncc.Region] = ncc.AvailableZones[ncc.Region] + "," + ncc.Zone
     }
     ncc.ServiceUrlOfDefaultZone = strings.TrimSpace(cc.ServiceUrlOfDefaultZone)
     if ncc.ServiceUrlOfDefaultZone == "" {
@@ -320,13 +330,18 @@ func (config *EurekaConfig) Check() error {
     if ncc.ServiceUrlOfAllZone == nil {
         ncc.ServiceUrlOfAllZone = make(map[string]string)
     }
-    for _, zone := range strings.Split(ncc.AvailableZones, ",") {
+    for _, zone := range strings.Split(ncc.AvailableZones[ncc.Region], ",") {
+        zone = strings.TrimSpace(zone)
+        if zone == "" {
+            continue
+        }
         if serviceUrl, ok := ncc.ServiceUrlOfAllZone[zone]; !ok || strings.TrimSpace(serviceUrl) == "" {
             ncc.ServiceUrlOfAllZone[zone] = DefaultServiceUrl
             if zone == DefaultZone {
                 ncc.ServiceUrlOfAllZone[zone] = ncc.ServiceUrlOfDefaultZone
             }
         }
+        ncc.ServiceUrlOfAllZone[zone] = strings.TrimSpace(ncc.ServiceUrlOfAllZone[zone])
     }
     config.InstanceConfig = nic
     config.ClientConfig = ncc

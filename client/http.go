@@ -40,6 +40,10 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
     }
     // 遍历eureka server服务地址，循环发请求直至成功
     for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
+        serviceUrl = strings.TrimSpace(serviceUrl)
+        if serviceUrl == "" {
+            continue
+        }
         request := &EurekaRequest{
             ServiceUrl:   serviceUrl,
             AuthUsername: "",
