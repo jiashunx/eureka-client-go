@@ -1,6 +1,7 @@
 package client
 
 import (
+    "context"
     "errors"
     "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
@@ -17,18 +18,17 @@ type discoveryClient struct {
 // start 启动eureka服务发现客户端
 func (discovery *discoveryClient) start() {
     go discovery.discovery0()
-    go discovery.discovery()
+    go discovery.discovery(discovery.client.ctx)
 }
 
 // discovery 具体服务发现处理逻辑
-func (discovery *discoveryClient) discovery() {
-    client := discovery.client
-    ticker := time.NewTicker(time.Duration(client.config.RegistryFetchIntervalSeconds) * time.Second)
+func (discovery *discoveryClient) discovery(ctx context.Context) {
+    ticker := time.NewTicker(time.Duration(discovery.client.config.RegistryFetchIntervalSeconds) * time.Second)
 FL:
     for {
         <-ticker.C
         select {
-        case <-client.ctx.Done():
+        case <-ctx.Done():
             ticker.Stop()
             break FL
         default:

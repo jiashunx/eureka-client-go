@@ -1,6 +1,7 @@
 package client
 
 import (
+    "context"
     "errors"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
@@ -20,7 +21,7 @@ func (registry *registryClient) start() (response *CommonResponse) {
     if *client.config.InstanceEnabledOnIt {
         registry.status = meta.StatusUp
     }
-    go registry.heartBeat()
+    go registry.heartBeat(registry.client.ctx)
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: nil}
     }
@@ -35,14 +36,13 @@ func (registry *registryClient) start() (response *CommonResponse) {
 }
 
 // heartBeat 心跳处理
-func (registry *registryClient) heartBeat() {
-    client := registry.client
-    ticker := time.NewTicker(time.Duration(client.config.LeaseRenewalIntervalInSeconds) * time.Second)
+func (registry *registryClient) heartBeat(ctx context.Context) {
+    ticker := time.NewTicker(time.Duration(registry.client.config.LeaseRenewalIntervalInSeconds) * time.Second)
 FL:
     for {
         <-ticker.C
         select {
-        case <-client.ctx.Done():
+        case <-ctx.Done():
             ticker.Stop()
             break FL
         default:
