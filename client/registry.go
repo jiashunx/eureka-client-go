@@ -3,6 +3,7 @@ package client
 import (
     "context"
     "errors"
+    "fmt"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
@@ -128,11 +129,76 @@ func (registry *registryClient) isEnabled() (bool, error) {
 }
 
 // buildInstanceInfo 根据配置构造 *meta.InstanceInfo
-func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (*meta.InstanceInfo, error) {
-    client := registry.client
-    // TODO 待补充具体逻辑
-    return &meta.InstanceInfo{
-        AppName:    client.config.AppName,
-        InstanceId: client.config.InstanceId,
-    }, nil
+func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (instance *meta.InstanceInfo, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("failed to build instance info, status: %v, action: %v", status, action))
+        }
+    }()
+
+    config := registry.client.config
+    instance = &meta.InstanceInfo{
+        InstanceId:                    config.InstanceId,
+        HostName:                      config.Hostname,
+        AppName:                       config.AppName,
+        IpAddr:                        config.IpAddress,
+        Status:                        status,
+        OverriddenStatus:              meta.StatusUnknown,
+        Port:                          meta.DefaultNonSecurePortWrapper(),
+        SecurePort:                    meta.DefaultSecurePortWrapper(),
+        CountryId:                     1,
+        DataCenterInfo:                meta.DefaultDataCenterInfo(),
+        LeaseInfo:                     meta.DefaultLeaseInfo(),
+        Metadata:                      make(map[string]string),
+        HomePageUrl:                   config.HomePageUrl,
+        StatusPageUrl:                 config.StatusPageUrl,
+        HealthCheckUrl:                config.HealthCheckUrl,
+        VipAddress:                    config.VirtualHostname,
+        SecureVipAddress:              config.SecureVirtualHostname,
+        IsCoordinatingDiscoveryServer: "false",
+        LastUpdatedTimestamp:          "",
+        LastDirtyTimestamp:            "",
+        ActionType:                    action,
+        Region:                        config.Region,
+        Zone:                          config.Zone,
+    }
+    if *config.PreferIpAddress {
+        instance.HostName = config.IpAddress
+    }
+    instance.Port.Port = config.NonSecurePort
+    instance.Port.Enabled = meta.StrFalse
+    if *config.NonSecurePortEnabled {
+        instance.Port.Enabled = meta.StrTrue
+    }
+    instance.SecurePort.Port = config.SecurePort
+    instance.SecurePort.Enabled = meta.StrFalse
+    if *config.SecurePortEnabled {
+        instance.SecurePort.Enabled = meta.StrTrue
+    }
+    instance.LeaseInfo.RenewalIntervalInSecs = config.LeaseRenewalIntervalInSeconds
+    instance.LeaseInfo.DurationInSecs = config.LeaseExpirationDurationInSeconds
+    for k, v := range config.Metadata {
+        instance.Metadata[k] = v
+    }
+    httpUrl, _ := instance.HttpsServiceUrl()
+    httpsUrl, _ := instance.HttpsServiceUrl()
+    if instance.HomePageUrl == "" && httpUrl != "" {
+        instance.HomePageUrl = httpUrl + config.HomePageUrlPath
+    }
+    if instance.HomePageUrl == "" && httpsUrl != "" {
+        instance.HomePageUrl = httpsUrl + config.HomePageUrlPath
+    }
+    if instance.StatusPageUrl == "" && httpUrl != "" {
+        instance.StatusPageUrl = httpUrl + config.StatusPageUrlPath
+    }
+    if instance.StatusPageUrl == "" && httpsUrl != "" {
+        instance.StatusPageUrl = httpsUrl + config.StatusPageUrlPath
+    }
+    if instance.HealthCheckUrl == "" && httpUrl != "" {
+        instance.HealthCheckUrl = httpUrl + config.HealthCheckUrlPath
+    }
+    if instance.HealthCheckUrl == "" && httpsUrl != "" {
+        instance.HealthCheckUrl = httpsUrl + config.HealthCheckUrlPath
+    }
+    return instance, nil
 }

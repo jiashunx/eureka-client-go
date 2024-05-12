@@ -215,15 +215,20 @@ func (instance *InstanceInfo) ToJson() ([]byte, error) {
     return json.Marshal(instance)
 }
 
-// ServiceUrl 获取服务实例的调用地址
-func (instance *InstanceInfo) ServiceUrl() string {
-    if instance.SecurePort != nil && instance.SecurePort.IsEnabled() && instance.SecurePort.Port > 0 {
-        return HttpsProtocol + instance.IpAddr + ":" + strconv.Itoa(instance.SecurePort.Port)
+// HttpServiceUrl 获取服务实例的http调用地址
+func (instance *InstanceInfo) HttpServiceUrl() (string, error) {
+    if instance.Port != nil && instance.Port.IsEnabled() {
+        return HttpProtocol + instance.HostName + ":" + strconv.Itoa(instance.Port.Port), nil
     }
-    if instance.Port != nil && instance.Port.IsEnabled() && instance.Port.Port > 0 {
-        return HttpProtocol + instance.IpAddr + ":" + strconv.Itoa(instance.Port.Port)
+    return "", errors.New("the non-secure port of the service instance is not enabled")
+}
+
+// HttpsServiceUrl 获取服务实例的https调用地址
+func (instance *InstanceInfo) HttpsServiceUrl() (string, error) {
+    if instance.SecurePort != nil && instance.SecurePort.IsEnabled() {
+        return HttpsProtocol + instance.HostName + ":" + strconv.Itoa(instance.SecurePort.Port), nil
     }
-    return ""
+    return "", errors.New("the secure port of the service instance is not enabled")
 }
 
 // Copy 复制副本
