@@ -41,7 +41,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             client.logger.Errorf("doRequest, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("doRequest, OK")
+            client.logger.Debugf("doRequest, OK >>> body: %v", ret.Body)
         }
     }()
     if server == nil {
@@ -309,7 +309,7 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
             client.logger.Errorf("getApps, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getApps, OK")
+            client.logger.Debugf("getApps, OK >>> ret: %v", SummaryApps(ret.Apps))
         }
     }()
     client.logger.Debugf("getApps, PARAMS >>> server: %v, uri: %s", server, uri)
@@ -360,7 +360,7 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
             client.logger.Errorf("getInstances, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getInstances, OK")
+            client.logger.Debugf("getInstances, OK >>> ret: %v", SummaryInstances(ret.Instances))
         }
     }()
     client.logger.Debugf("getInstances, PARAMS >>> server: %v, uri: %s", server, uri)
@@ -411,7 +411,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
             client.logger.Errorf("getInstance, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getInstance, OK")
+            client.logger.Debugf("getInstance, OK >>> ret: %v", SummaryInstance(ret.Instance))
         }
     }()
     client.logger.Debugf("getInstance, PARAMS >>> server: %v, uri: %s", server, uri)

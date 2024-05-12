@@ -176,7 +176,7 @@ func (client *EurekaClient) AccessApp(appName string) (app *meta.AppInfo, err er
             client.logger.Errorf("AccessApp, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessApp, OK >>> app: %v", app)
+            client.logger.Debugf("AccessApp, OK >>> app: %v", SummaryApp(app))
         }
     }()
     client.logger.Debugf("AccessApp, PARAMS >>> appName: %v", appName)
@@ -204,7 +204,7 @@ func (client *EurekaClient) AccessAppsByVip(vip string) (vipApps []*meta.AppInfo
             client.logger.Debugf("AccessAppsByVip, OK >>> vipApps: %v", vipApps)
         }
     }()
-    client.logger.Debugf("AccessAppsByVip, PARAMS >>> vip: %v", vip)
+    client.logger.Debugf("AccessAppsByVip, PARAMS >>> vip: %v", SummaryApps(vipApps))
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -226,7 +226,7 @@ func (client *EurekaClient) AccessAppsBySvip(svip string) (svipApps []*meta.AppI
             client.logger.Errorf("AccessAppsBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessAppsBySvip, OK >>> svipApps: %v", svipApps)
+            client.logger.Debugf("AccessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
         }
     }()
     client.logger.Debugf("AccessAppsBySvip, PARAMS >>> svip: %v", svip)
@@ -251,7 +251,7 @@ func (client *EurekaClient) AccessInstancesByVip(vip string) (instances []*meta.
             client.logger.Errorf("AccessInstancesByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessInstancesByVip, OK >>> instances: %v", instances)
+            client.logger.Debugf("AccessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
     client.logger.Debugf("AccessInstancesByVip, PARAMS >>> vip: %v", vip)
@@ -276,7 +276,7 @@ func (client *EurekaClient) AccessInstancesBySvip(svip string) (instances []*met
             client.logger.Errorf("AccessInstancesBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessInstancesBySvip, OK >>> instances: %v", instances)
+            client.logger.Debugf("AccessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
     client.logger.Debugf("AccessInstancesBySvip, PARAMS >>> svip: %v", svip)

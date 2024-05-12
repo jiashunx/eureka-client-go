@@ -142,6 +142,6 @@ func (logger *loggerImpl) printf(level Level, format string, a ...any) {
 var DefaultLogger = func() Logger {
     return &loggerImpl{
         level:      InfoLevel,
-        defaultLog: stdLog.New(os.Stdout, "", stdLog.Ldate|stdLog.Ltime|stdLog.Lmicroseconds|stdLog.Llongfile),
+        defaultLog: stdLog.New(os.Stdout, "", stdLog.Ldate|stdLog.Ltime|stdLog.Lmicroseconds),
     }
 }

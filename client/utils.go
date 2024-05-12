@@ -124,3 +124,62 @@ func RandomLoopMap(m map[string]interface{}, f func(k string, v interface{}) (bo
     }
     return nil
 }
+
+// SummaryAppsMap 日志:简化服务信息
+func SummaryAppsMap(appsMap map[string][]*meta.AppInfo) map[string][]interface{} {
+    summary := make(map[string][]interface{})
+    if appsMap != nil {
+        for zone, zoneApps := range appsMap {
+            summary[zone] = SummaryApps(zoneApps)
+        }
+    }
+    return summary
+}
+
+// SummaryApps 日志:简化服务信息
+func SummaryApps(apps []*meta.AppInfo) []interface{} {
+    summary := make([]interface{}, 0)
+    if apps != nil {
+        for _, app := range apps {
+            summary = append(summary, SummaryApp(app))
+        }
+    }
+    return summary
+}
+
+// SummaryApp 日志:简化服务信息
+func SummaryApp(app *meta.AppInfo) map[string]interface{} {
+    summary := make(map[string]interface{})
+    if app != nil {
+        summary["app"] = app.Name
+        summary["instances"] = SummaryInstances(app.Instances)
+    }
+    return summary
+}
+
+// SummaryInstances 日志:简化服务实例信息
+func SummaryInstances(instances []*meta.InstanceInfo) []map[string]string {
+    summary := make([]map[string]string, 0)
+    if instances != nil {
+        for _, instance := range instances {
+            summary = append(summary, SummaryInstance(instance))
+        }
+    }
+    return summary
+}
+
+// SummaryInstance 日志:简化服务实例信息
+func SummaryInstance(instance *meta.InstanceInfo) map[string]string {
+    summary := make(map[string]string)
+    if instance != nil {
+        summary["region"] = instance.Region
+        summary["zone"] = instance.Zone
+        summary["app"] = instance.AppName
+        summary["instanceId"] = instance.InstanceId
+        summary["hostName"] = instance.HostName
+        summary["ipAddr"] = instance.IpAddr
+        summary["vipAddress"] = instance.VipAddress
+        summary["secureVipAddress"] = instance.SecureVipAddress
+    }
+    return summary
+}
