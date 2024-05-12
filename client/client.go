@@ -313,22 +313,34 @@ func (client *EurekaClient) SetLogger(logger log.Logger) error {
 }
 
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
-func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
+func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("NewEurekaClient, recover error: %v", rc))
+        }
+        if err != nil {
+            client.logger.Errorf("NewEurekaClient, FAILED >>> error: %v", err)
+        }
+        if err == nil {
+            client.logger.Tracef("NewEurekaClient, OK")
+        }
+    }()
+    client.logger.Tracef("NewEurekaClient, PARAMS >>> config: %v", config)
     if config == nil {
-        return nil, errors.New("EurekaConfig is nil")
+        panic("EurekaConfig is nil")
     }
-    eurekaConfig := &meta.EurekaConfig{
+    newConfig := &meta.EurekaConfig{
         InstanceConfig: config.InstanceConfig,
         ClientConfig:   config.ClientConfig,
     }
-    if err := eurekaConfig.Check(); err != nil {
+    if err = newConfig.Check(); err != nil {
         return nil, err
     }
     logger := log.DefaultLogger()
     httpClient := &HttpClient{logger: logger}
     return &EurekaClient{
         UUID:            strings.ReplaceAll(uuid.New().String(), "-", ""),
-        config:          eurekaConfig,
+        config:          newConfig,
         rootCtx:         nil,
         ctx:             nil,
         ctxCancel:       nil,
