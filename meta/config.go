@@ -135,6 +135,8 @@ func (config *EurekaConfig) GetCurrZoneEurekaServer() (*EurekaServer, error) {
         return nil, err
     }
     server := &EurekaServer{
+        Region:                config.Region,
+        Zone:                  config.Zone,
         ServiceUrl:            config.ServiceUrlOfAllZone[config.Zone],
         Username:              config.EurekaServerUsername,
         Password:              config.EurekaServerPassword,
@@ -155,6 +157,8 @@ func (config *EurekaConfig) GetAllZoneEurekaServers() (map[string]*EurekaServer,
     servers := make(map[string]*EurekaServer)
     for zone, serviceUrl := range config.ServiceUrlOfAllZone {
         servers[zone] = &EurekaServer{
+            Region:                config.Region,
+            Zone:                  config.Zone,
             ServiceUrl:            serviceUrl,
             Username:              config.EurekaServerUsername,
             Password:              config.EurekaServerPassword,
@@ -396,6 +400,10 @@ func GetLocalIpv4Address() (string, error) {
 
 // EurekaServer eureka server 连接信息
 type EurekaServer struct {
+    // 归属Region(非必需)
+    Region string
+    // 归属Zone(非必需)
+    Zone string
     // 服务地址
     ServiceUrl string
     // BasicAuth用户名, 若 ServiceUrl 中指定了安全认证信息, 则其优先级更高
