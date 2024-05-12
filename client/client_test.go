@@ -33,13 +33,13 @@ func TestEurekaClient1(t *testing.T) {
     client1.logger.SetLevel(log.DebugLevel)
 
     // 启动客户端1
-    err = client1.Start()
-    ast.Nilf(err, "%v", err)
+    response1 := client1.Start()
+    ast.Nilf(response1.Error, "%v", response1.Error)
 
     <-time.NewTimer(time.Second).C
 
     // 客户端1默认注册时实例状态为STARTING，需手工修改状态为UP
-    response1 := client1.ChangeStatus(meta.StatusUp)
+    response1 = client1.ChangeStatus(meta.StatusUp)
     ast.Nilf(response1.Error, "%v", response1.Error)
 
     <-time.NewTimer(60 * time.Second).C
@@ -52,8 +52,8 @@ func TestEurekaClient1(t *testing.T) {
 
     // 停止客户端后可再次启动客户端（更新UUID以便于辨别输出的调试日志）
     client1.UUID = uuid.New().String()
-    err = client1.Start()
-    ast.Nilf(err, "%v", err)
+    response1 = client1.Start()
+    ast.Nilf(response1.Error, "%v", response1.Error)
 
     <-time.NewTimer(60 * time.Second).C
 
@@ -112,8 +112,8 @@ func TestEurekaClient2(t *testing.T) {
     client.logger.SetLevel(log.DebugLevel)
 
     // 启动客户端（指定了 InstanceEnabledOnIt 参数，默认注册时服务实例状态为UP）
-    err = client.Start()
-    ast.Nilf(err, "%v", err)
+    response := client.Start()
+    ast.Nilf(response.Error, "%v", response.Error)
 
     <-time.NewTimer(60 * time.Second).C
 
@@ -123,6 +123,6 @@ func TestEurekaClient2(t *testing.T) {
     ast.NotNil(app)
 
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
-    response := client.Stop()
+    response = client.Stop()
     ast.Nilf(response.Error, "%v", response.Error)
 }

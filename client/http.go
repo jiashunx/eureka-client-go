@@ -29,7 +29,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
                 UUID:         strings.ReplaceAll(uuid.New().String(), "-", ""),
                 Request:      nil,
                 HttpResponse: nil,
-                Error:        errors.New(fmt.Sprintf("failed to call eureka service, reason: %v", rc)),
+                Error:        errors.New(fmt.Sprintf("doRequest, recover error: %v", rc)),
                 Responses:    nil,
             })
         }
@@ -37,12 +37,19 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             r.Responses = responses
         }
         ret = responses[len(responses)-1]
+        if ret.Error != nil {
+            client.logger.Errorf("doRequest, FAILED >>> error: %v", ret.Error)
+        }
+        if ret.Error == nil {
+            client.logger.Debugf("doRequest, OK")
+        }
     }()
     if server == nil {
         panic(errors.New("EurekaServer is nil"))
     }
+    client.logger.Debugf("doRequest, PARAMS >>> expect: %d, method: %s, uri: %s, server: %#v", expect, method, uri, server)
     // 遍历eureka server服务地址，循环发请求直至成功
-    for _, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
+    for idx, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
         serviceUrl = strings.TrimSpace(serviceUrl)
         if serviceUrl == "" {
             continue
@@ -67,6 +74,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         if err != nil {
             response.Error = err
             responses = append(responses, response)
+            client.logger.Errorf("doRequest, failed to parse serviceUrl >> idx: %d, serviceUrl: %s, error: %v", idx, serviceUrl, err)
             continue
         }
         if URL.User != nil && URL.User.String() != "" {
@@ -81,11 +89,13 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         if URL.Port() == "" {
             request.RequestUrl = URL.Scheme + "://" + URL.Hostname() + URL.Path + strings.TrimSpace(uri)
         }
+        client.logger.Debugf("doRequest, create request object >>> idx: %d, method: %s, requestUrl: %s, body: %s", idx, method, request.RequestUrl, request.Body)
         httpRequest, err := http.NewRequest(request.Method, request.RequestUrl, strings.NewReader(request.Body))
         response.HttpRequest = httpRequest
         response.Error = err
         if response.Error != nil {
             responses = append(responses, response)
+            client.logger.Errorf("doRequest, failed to create request object >>> idx: %d, error: %v", idx, err)
             continue
         }
         if request.AuthUsername != "" {
@@ -118,29 +128,43 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             }
             response.Error = errors.New(fmt.Sprintf("the http response code is incorrect, expect: %d, actual: %d", expect, response.HttpResponse.StatusCode))
         }
+        if response.Error != nil {
+            client.logger.Errorf("doRequest, request failed >>> idx: %d, error: %v", idx, err)
+        }
     }
     if len(responses) == 0 {
         panic(errors.New("no eureka server service address available"))
     }
-    return responses[len(responses)-1]
+    return nil
 }
 
 // Register 注册新服务
-func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.InstanceInfo) *CommonResponse {
+func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.InstanceInfo) (ret *CommonResponse) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            ret = &CommonResponse{}
+            ret.Error = errors.New(fmt.Sprintf("Register, recover error: %v", rc))
+        }
+        if ret.Error != nil {
+            client.logger.Errorf("Register, FAILED >>> error: %v", ret.Error)
+        }
+        if ret.Error == nil {
+            client.logger.Debugf("Register, OK")
+        }
+    }()
+    client.logger.Debugf("Register, PARAMS >>> server: %v, instance: %v", server, instance)
     if instance == nil {
         return &CommonResponse{Error: errors.New("InstanceInfo is nil")}
     }
-    ret := &CommonResponse{}
-    ret.Error = instance.Check()
-    if ret.Error != nil {
-        return ret
+    err := instance.Check()
+    if err != nil {
+        return &CommonResponse{Error: err}
     }
     body := make(map[string]*meta.InstanceInfo)
     body["instance"] = instance
-    var payload []byte
-    payload, ret.Error = json.Marshal(body)
-    if ret.Error != nil {
-        return ret
+    payload, err := json.Marshal(body)
+    if err != nil {
+        return &CommonResponse{Error: err}
     }
     requestUrl := fmt.Sprintf("/apps/%s", instance.AppName)
     return client.commonHttp(204, server, "POST", requestUrl, payload)
@@ -279,12 +303,19 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     ret = &AppsResponse{Apps: make([]*meta.AppInfo, 0)}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to query service, uri: %s, reason: %v", uri, rc))
+            ret.Error = errors.New(fmt.Sprintf("getApps, recover error: %v", rc))
+        }
+        if ret.Error != nil {
+            client.logger.Errorf("getApps, FAILED >>> error: %v", ret.Error)
+        }
+        if ret.Error == nil {
+            client.logger.Debugf("getApps, OK")
         }
     }()
+    client.logger.Debugf("getApps, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = errors.New(fmt.Sprintf("failed to query service, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
+        ret.Error = ret.Response.Error
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -299,12 +330,12 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
     }
     ij := ii.(map[string]interface{})["applications"]
     if ij == nil {
-        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
+        ret.Error = errors.New("the query yielded no results: 'applications'")
         return ret
     }
     ik := ij.(map[string]interface{})["application"]
     if ik == nil {
-        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
+        ret.Error = errors.New("the query yielded no results: 'applications'.'application'")
         return ret
     }
     for _, m := range ik.([]interface{}) {
@@ -323,12 +354,19 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     ret = &InstancesResponse{Instances: make([]*meta.InstanceInfo, 0)}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %v", uri, rc))
+            ret.Error = errors.New(fmt.Sprintf("getInstances, recover error: %v", rc))
+        }
+        if ret.Error != nil {
+            client.logger.Errorf("getInstances, FAILED >>> error: %v", ret.Error)
+        }
+        if ret.Error == nil {
+            client.logger.Debugf("getInstances, OK")
         }
     }()
+    client.logger.Debugf("getInstances, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
+        ret.Error = ret.Response.Error
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -343,12 +381,12 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
     }
     ij := ii.(map[string]interface{})["application"]
     if ij == nil {
-        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
+        ret.Error = errors.New("the query yielded no results: 'application'")
         return ret
     }
     ik := ij.(map[string]interface{})["instance"]
     if ik == nil {
-        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
+        ret.Error = errors.New("the query yielded no results: 'application'.'instance'")
         return ret
     }
     for _, m := range ik.([]interface{}) {
@@ -367,12 +405,19 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     ret = &InstanceResponse{}
     defer func() {
         if rc := recover(); rc != nil {
-            ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %v", uri, rc))
+            ret.Error = errors.New(fmt.Sprintf("getInstance, recover error: %v", rc))
+        }
+        if ret.Error != nil {
+            client.logger.Errorf("getInstance, FAILED >>> error: %v", ret.Error)
+        }
+        if ret.Error == nil {
+            client.logger.Debugf("getInstance, OK")
         }
     }()
+    client.logger.Debugf("getInstance, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
-        ret.Error = errors.New(fmt.Sprintf("failed to query service instance, uri: %s, reason: %s", uri, ret.Response.Error.Error()))
+        ret.Error = ret.Response.Error
     }
     if ret.Response.HttpResponse != nil {
         ret.StatusCode = ret.Response.HttpResponse.StatusCode
@@ -387,7 +432,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
     }
     ij := ii.(map[string]interface{})["instance"]
     if ij == nil {
-        ret.Error = errors.New(fmt.Sprintf("the query yielded no results, uri: %s", uri))
+        ret.Error = errors.New("the query yielded no results: 'instance'")
         return ret
     }
     ret.Instance, ret.Error = meta.ParseInstanceInfo(ij.(map[string]interface{}))

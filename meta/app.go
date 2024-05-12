@@ -64,7 +64,7 @@ func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             app = nil
-            err = errors.New(fmt.Sprintf("failed to parse app info, reason: %v", rc))
+            err = errors.New(fmt.Sprintf("failed to parse app info, recover error: %v", rc))
         }
     }()
     app = &AppInfo{}

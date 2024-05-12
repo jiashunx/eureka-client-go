@@ -117,6 +117,11 @@ func (logger *loggerImpl) Errorf(format string, a ...any) {
 
 // print 输出日志
 func (logger *loggerImpl) print(level Level, a ...any) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            // do nothing.
+        }
+    }()
     na := make([]any, 0)
     na = append(na, fmt.Sprintf("%5s", LevelNames[level]))
     na = append(na, a...)
@@ -125,6 +130,11 @@ func (logger *loggerImpl) print(level Level, a ...any) {
 
 // printf 输出日志(参数格式化处理)
 func (logger *loggerImpl) printf(level Level, format string, a ...any) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            // do nothing.
+        }
+    }()
     logger.defaultLog.Printf(fmt.Sprintf("%5s", LevelNames[level])+" "+format+" \n", a...)
 }
 
