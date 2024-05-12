@@ -73,8 +73,6 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
         }
     }
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
-    client.registryClient = &registryClient{client: client, logger: client.logger}
-    client.discoveryClient = &discoveryClient{client: client, logger: client.logger}
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response = client.registryClient.start(subCtx); response.Error != nil {
         client.ctxCancel()
@@ -318,14 +316,7 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("NewEurekaClient, recover error: %v", rc))
         }
-        if err != nil {
-            client.logger.Errorf("NewEurekaClient, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            client.logger.Tracef("NewEurekaClient, OK")
-        }
     }()
-    client.logger.Tracef("NewEurekaClient, PARAMS >>> config: %v", config)
     if config == nil {
         panic("EurekaConfig is nil")
     }
@@ -336,9 +327,7 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
     if err = newConfig.Check(); err != nil {
         return nil, err
     }
-    logger := log.DefaultLogger()
-    httpClient := &HttpClient{logger: logger}
-    return &EurekaClient{
+    client = &EurekaClient{
         UUID:            strings.ReplaceAll(uuid.New().String(), "-", ""),
         config:          newConfig,
         rootCtx:         nil,
@@ -346,7 +335,11 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
         ctxCancel:       nil,
         registryClient:  nil,
         discoveryClient: nil,
-        httpClient:      httpClient,
-        logger:          logger,
-    }, nil
+        httpClient:      nil,
+        logger:          log.DefaultLogger(),
+    }
+    client.registryClient = &registryClient{client: client, logger: client.logger}
+    client.discoveryClient = &discoveryClient{client: client, logger: client.logger}
+    client.httpClient = &HttpClient{logger: client.logger}
+    return client, nil
 }
