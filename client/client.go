@@ -75,8 +75,8 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response = client.registryClient.start(subCtx); response.Error != nil {
-        client.ctxCancel()
         client.Stop()
+        client.ctxCancel()
         return response
     }
     client.discoveryClient.start(subCtx)
