@@ -16,9 +16,8 @@ type discoveryClient struct {
 }
 
 // start 启动eureka服务发现客户端
-func (discovery *discoveryClient) start() {
-    go discovery.discovery0()
-    go discovery.discovery(discovery.client.ctx)
+func (discovery *discoveryClient) start(ctx context.Context) {
+    go discovery.discovery(ctx)
 }
 
 // discovery 具体服务发现处理逻辑
@@ -26,21 +25,21 @@ func (discovery *discoveryClient) discovery(ctx context.Context) {
     ticker := time.NewTicker(time.Duration(discovery.client.config.RegistryFetchIntervalSeconds) * time.Second)
 FL:
     for {
-        <-ticker.C
         select {
         case <-ctx.Done():
             ticker.Stop()
             break FL
         default:
             if b, _ := discovery.isEnabled(); b {
-                go discovery.discovery0()
+                go discovery.discovery0(ctx)
             }
         }
+        <-ticker.C
     }
 }
 
 // discovery 具体服务发现处理逻辑
-func (discovery *discoveryClient) discovery0() {
+func (discovery *discoveryClient) discovery0(ctx context.Context) {
     client := discovery.client
     servers, err := client.config.GetAllZoneEurekaServers()
     if err != nil {

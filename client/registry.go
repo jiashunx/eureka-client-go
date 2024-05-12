@@ -16,13 +16,13 @@ type registryClient struct {
 }
 
 // start 启动eureka服务注册客户端
-func (registry *registryClient) start() (response *CommonResponse) {
+func (registry *registryClient) start(ctx context.Context) (response *CommonResponse) {
     client := registry.client
     registry.status = meta.StatusStarting
     if *client.config.InstanceEnabledOnIt {
         registry.status = meta.StatusUp
     }
-    go registry.heartBeat(registry.client.ctx)
+    go registry.beat(ctx)
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: nil}
     }
@@ -36,24 +36,24 @@ func (registry *registryClient) start() (response *CommonResponse) {
     return response
 }
 
-// heartBeat 心跳处理
-func (registry *registryClient) heartBeat(ctx context.Context) {
+// beat 心跳处理
+func (registry *registryClient) beat(ctx context.Context) {
     ticker := time.NewTicker(time.Duration(registry.client.config.LeaseRenewalIntervalInSeconds) * time.Second)
 FL:
     for {
-        <-ticker.C
         select {
         case <-ctx.Done():
             ticker.Stop()
             break FL
         default:
-            go registry.heartBeat0()
+            go registry.beat0(ctx)
         }
+        <-ticker.C
     }
 }
 
-// heartBeat 心跳处理
-func (registry *registryClient) heartBeat0() {
+// beat 心跳处理
+func (registry *registryClient) beat0(ctx context.Context) {
     client := registry.client
     if b, _ := registry.isEnabled(); b && registry.heartbeat && registry.status == meta.StatusUp {
         server, err := client.config.GetCurrZoneEurekaServer()

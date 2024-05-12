@@ -4,8 +4,13 @@ import (
     "context"
     "errors"
     "fmt"
+    "github.com/google/uuid"
     "github.com/jiashunx/eureka-client-go/meta"
+    "strings"
 )
+
+// eurekaClientUUID context中存储的客户端uuid属性名称
+var eurekaClientUUID = "EurekaClientUUID"
 
 // clientNotStartedErr 错误:客户端未启动
 var clientNotStartedErr = func(format string, a ...any) error {
@@ -25,7 +30,9 @@ var clientHasBeenStoppedErr = func(format string, a ...any) error {
 
 // EurekaClient eureka客户端模型
 type EurekaClient struct {
+    UUID            string
     config          *meta.EurekaConfig
+    rootCtx         context.Context
     ctx             context.Context
     ctxCancel       context.CancelFunc
     registryClient  *registryClient
@@ -43,8 +50,11 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
     if client.config == nil {
         return errors.New("EurekaConfig is nil")
     }
+    if client.rootCtx == nil {
+        client.rootCtx = context.TODO()
+    }
     if ctx == nil {
-        ctx = context.Background()
+        ctx = client.rootCtx
     }
     if client.ctx != nil {
         select {
@@ -57,12 +67,13 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
     client.registryClient = &registryClient{client: client}
     client.discoveryClient = &discoveryClient{client: client}
-    if response := client.registryClient.start(); response.Error != nil {
+    subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
+    if response := client.registryClient.start(subCtx); response.Error != nil {
         client.ctxCancel()
         client.Stop()
         return response.Error
     }
-    client.discoveryClient.start()
+    client.discoveryClient.start(subCtx)
     return nil
 }
 
@@ -188,7 +199,9 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     }
     httpClient := &HttpClient{}
     return &EurekaClient{
+        UUID:            strings.ReplaceAll(uuid.New().String(), "-", ""),
         config:          eurekaConfig,
+        rootCtx:         nil,
         ctx:             nil,
         ctxCancel:       nil,
         registryClient:  nil,
