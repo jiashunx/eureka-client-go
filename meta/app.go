@@ -1,6 +1,7 @@
 package meta
 
 import (
+    "encoding/json"
     "errors"
     "fmt"
 )
@@ -59,23 +60,20 @@ func (app *AppInfo) AvailableInstances() []*InstanceInfo {
     return instances
 }
 
-// ParseAppInfo 从map中解析服务实例信息
-func ParseAppInfo(m map[string]interface{}) (app *AppInfo, err error) {
+// ParseAppInfo 从json中解析服务信息
+func ParseAppInfo(data []byte) (app *AppInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            app = nil
             err = errors.New(fmt.Sprintf("failed to parse app info, recover error: %v", rc))
         }
     }()
     app = &AppInfo{}
-    app.Name = m["name"].(string)
-    app.Instances = make([]*InstanceInfo, 0)
-    for _, v := range m["instance"].([]interface{}) {
-        instance, err := ParseInstanceInfo(v.(map[string]interface{}))
-        if err != nil {
-            return nil, err
-        }
-        app.Instances = append(app.Instances, instance)
+    err = json.Unmarshal(data, app)
+    if err != nil {
+        return nil, err
+    }
+    if app.Instances == nil {
+        app.Instances = make([]*InstanceInfo, 0)
     }
     return app, nil
 }

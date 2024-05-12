@@ -86,23 +86,15 @@ type InstanceConfig struct {
     HealthCheckUrlPath string `json:"health-check-url-path"`
 }
 
-// ParseInstanceConfig 从map(json)中解析实例配置信息
-func ParseInstanceConfig(m map[string]interface{}) (instanceConfig *InstanceConfig, err error) {
+// ParseInstanceConfig 从json中解析实例配置信息
+func ParseInstanceConfig(data []byte) (config *InstanceConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("failed to parse instance config, recover error: %v", rc))
         }
     }()
-    str, err := json.Marshal(m)
-    if err != nil {
-        return nil, err
-    }
-    instanceConfig = &InstanceConfig{}
-    err = json.Unmarshal(str, instanceConfig)
-    if err != nil {
-        return nil, err
-    }
-    return instanceConfig, nil
+    config = &InstanceConfig{}
+    return config, json.Unmarshal(data, config)
 }
 
 // ClientConfig 客户端配置信息
@@ -139,23 +131,15 @@ type ClientConfig struct {
     ServiceUrlOfAllZone map[string]string `json:"service-url-of-all-zone"`
 }
 
-// ParseClientConfig 从map(json)中解析客户端配置信息
-func ParseClientConfig(m map[string]interface{}) (clientConfig *ClientConfig, err error) {
+// ParseClientConfig 从json中解析客户端配置信息
+func ParseClientConfig(data []byte) (config *ClientConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("failed to parse client config, recover error: %v", rc))
         }
     }()
-    str, err := json.Marshal(m)
-    if err != nil {
-        return nil, err
-    }
-    clientConfig = &ClientConfig{}
-    err = json.Unmarshal(str, clientConfig)
-    if err != nil {
-        return nil, err
-    }
-    return clientConfig, nil
+    config = &ClientConfig{}
+    return config, json.Unmarshal(data, config)
 }
 
 // EurekaConfig eureka客户端配置信息
@@ -393,26 +377,19 @@ func (config *EurekaConfig) Check() error {
     return nil
 }
 
-// ParseEurekaConfig 从map(json)中解析eureka客户端配置信息
-func ParseEurekaConfig(m map[string]interface{}) (eurekaConfig *EurekaConfig, err error) {
+// ParseEurekaConfig 从json中解析eureka客户端配置信息
+func ParseEurekaConfig(data []byte) (config *EurekaConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
         }
     }()
-    str, err := json.Marshal(m)
+    config = &EurekaConfig{}
+    err = json.Unmarshal(data, config)
     if err != nil {
         return nil, err
     }
-    eurekaConfig = &EurekaConfig{}
-    err = json.Unmarshal(str, eurekaConfig)
-    if err != nil {
-        return nil, err
-    }
-    if err = eurekaConfig.Check(); err != nil {
-        return nil, err
-    }
-    return eurekaConfig, nil
+    return config, config.Check()
 }
 
 // HostInfo 当前主机信息
@@ -478,21 +455,13 @@ type EurekaServer struct {
     ConnectTimeoutSeconds int `json:"connect-timeout-seconds"`
 }
 
-// ParseEurekaServer 从map(json)中解析eureka server连接信息
-func ParseEurekaServer(m map[string]interface{}) (eurekaServer *EurekaServer, err error) {
+// ParseEurekaServer 从json中解析eureka server连接信息
+func ParseEurekaServer(data []byte) (server *EurekaServer, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
         }
     }()
-    str, err := json.Marshal(m)
-    if err != nil {
-        return nil, err
-    }
-    eurekaServer = &EurekaServer{}
-    err = json.Unmarshal(str, eurekaServer)
-    if err != nil {
-        return nil, err
-    }
-    return eurekaServer, nil
+    server = &EurekaServer{}
+    return server, json.Unmarshal(data, server)
 }

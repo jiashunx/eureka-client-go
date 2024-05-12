@@ -25,20 +25,6 @@ func (dc *DataCenterInfo) Copy() *DataCenterInfo {
     }
 }
 
-// ParseDataCenterInfo 从map中解析数据中心信息
-func ParseDataCenterInfo(m map[string]interface{}) (dc *DataCenterInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            dc = nil
-            err = errors.New(fmt.Sprintf("failed to parse data center info, recover error: %v", rc))
-        }
-    }()
-    dc = &DataCenterInfo{}
-    dc.Class = m["@class"].(string)
-    dc.Name = m["name"].(string)
-    return dc, nil
-}
-
 // DefaultDataCenterInfo 默认数据中心信息
 func DefaultDataCenterInfo() *DataCenterInfo {
     return &DataCenterInfo{
@@ -72,24 +58,6 @@ func (lease *LeaseInfo) Copy() *LeaseInfo {
     }
 }
 
-// ParseLeaseInfo 从map中解析服务实例租约信息
-func ParseLeaseInfo(m map[string]interface{}) (lease *LeaseInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            lease = nil
-            err = errors.New(fmt.Sprintf("failed to parse lease info, recover error: %v", rc))
-        }
-    }()
-    lease = &LeaseInfo{}
-    lease.RenewalIntervalInSecs = int(m["renewalIntervalInSecs"].(float64))
-    lease.DurationInSecs = int(m["durationInSecs"].(float64))
-    lease.RegistrationTimestamp = int64(m["registrationTimestamp"].(float64))
-    lease.LastRenewalTimestamp = int64(m["lastRenewalTimestamp"].(float64))
-    lease.EvictionTimestamp = int64(m["evictionTimestamp"].(float64))
-    lease.ServiceUpTimestamp = int64(m["serviceUpTimestamp"].(float64))
-    return lease, nil
-}
-
 // DefaultLeaseInfo 默认服务实例租约信息
 func DefaultLeaseInfo() *LeaseInfo {
     return &LeaseInfo{
@@ -118,20 +86,6 @@ func (wrapper *PortWrapper) Copy() *PortWrapper {
         Enabled: wrapper.Enabled,
         Port:    wrapper.Port,
     }
-}
-
-// ParsePortWrapper 从map中解析端口信息
-func ParsePortWrapper(m map[string]interface{}) (wrapper *PortWrapper, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            wrapper = nil
-            err = errors.New(fmt.Sprintf("failed to parse port wrapper info, recover error: %v", rc))
-        }
-    }()
-    wrapper = &PortWrapper{}
-    wrapper.Enabled = m["@enabled"].(string)
-    wrapper.Port = int(m["$"].(float64))
-    return wrapper, nil
 }
 
 // DefaultNonSecurePortWrapper 默认http端口信息
@@ -270,8 +224,8 @@ func (instance *InstanceInfo) Copy() *InstanceInfo {
     return newInstance
 }
 
-// ParseInstanceInfo 从map中解析服务实例信息
-func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err error) {
+// ParseInstanceInfo 从json中解析服务实例信息
+func ParseInstanceInfo(data []byte) (instance *InstanceInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             instance = nil
@@ -279,43 +233,11 @@ func ParseInstanceInfo(m map[string]interface{}) (instance *InstanceInfo, err er
         }
     }()
     instance = &InstanceInfo{}
-    instance.InstanceId = m["instanceId"].(string)
-    instance.HostName = m["hostName"].(string)
-    instance.AppName = m["app"].(string)
-    instance.IpAddr = m["ipAddr"].(string)
-    instance.Status = InstanceStatus(m["status"].(string))
-    instance.OverriddenStatus = InstanceStatus(m["overriddenStatus"].(string))
-    instance.Port, err = ParsePortWrapper(m["port"].(map[string]interface{}))
+    err = json.Unmarshal(data, instance)
     if err != nil {
         return nil, err
     }
-    instance.SecurePort, err = ParsePortWrapper(m["securePort"].(map[string]interface{}))
-    if err != nil {
-        return nil, err
-    }
-    instance.CountryId = int(m["countryId"].(float64))
-    instance.DataCenterInfo, err = ParseDataCenterInfo(m["dataCenterInfo"].(map[string]interface{}))
-    if err != nil {
-        return nil, err
-    }
-    instance.LeaseInfo, err = ParseLeaseInfo(m["leaseInfo"].(map[string]interface{}))
-    if err != nil {
-        return nil, err
-    }
-    instance.Metadata = make(map[string]string)
-    for k, v := range m["metadata"].(map[string]interface{}) {
-        instance.Metadata[k] = v.(string)
-    }
-    instance.HomePageUrl = m["homePageUrl"].(string)
-    instance.StatusPageUrl = m["statusPageUrl"].(string)
-    instance.HealthCheckUrl = m["healthCheckUrl"].(string)
-    instance.VipAddress = m["vipAddress"].(string)
-    instance.SecureVipAddress = m["secureVipAddress"].(string)
-    instance.IsCoordinatingDiscoveryServer = m["isCoordinatingDiscoveryServer"].(string)
-    instance.LastUpdatedTimestamp = m["lastUpdatedTimestamp"].(string)
-    instance.LastDirtyTimestamp = m["lastDirtyTimestamp"].(string)
-    instance.ActionType = ActionType(m["actionType"].(string))
-    return instance, nil
+    return instance, instance.Check()
 }
 
 // Check 检查属性

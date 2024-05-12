@@ -339,8 +339,13 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
         return ret
     }
     for _, m := range ik.([]interface{}) {
+        var data []byte
+        data, ret.Error = json.Marshal(m)
+        if ret.Error != nil {
+            return ret
+        }
         var app *meta.AppInfo
-        app, ret.Error = meta.ParseAppInfo(m.(map[string]interface{}))
+        app, ret.Error = meta.ParseAppInfo(data)
         if ret.Error != nil {
             return ret
         }
@@ -390,8 +395,13 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
         return ret
     }
     for _, m := range ik.([]interface{}) {
+        var data []byte
+        data, ret.Error = json.Marshal(m)
+        if ret.Error != nil {
+            return ret
+        }
         var instance *meta.InstanceInfo
-        instance, ret.Error = meta.ParseInstanceInfo(m.(map[string]interface{}))
+        instance, ret.Error = meta.ParseInstanceInfo(data)
         if ret.Error != nil {
             return ret
         }
@@ -435,6 +445,11 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
         ret.Error = errors.New("the query yielded no results: 'instance'")
         return ret
     }
-    ret.Instance, ret.Error = meta.ParseInstanceInfo(ij.(map[string]interface{}))
+    var data []byte
+    data, ret.Error = json.Marshal(ij)
+    if ret.Error != nil {
+        return ret
+    }
+    ret.Instance, ret.Error = meta.ParseInstanceInfo(data)
     return ret
 }
