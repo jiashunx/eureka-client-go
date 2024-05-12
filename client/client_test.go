@@ -2,6 +2,7 @@ package client
 
 import (
     "github.com/google/uuid"
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "github.com/stretchr/testify/assert"
     "testing"
@@ -28,6 +29,9 @@ func TestEurekaClient1(t *testing.T) {
     })
     ast.Nilf(err, "%v", err)
 
+    // 更新日志级别
+    client1.logger.SetLevel(log.DebugLevel)
+
     // 启动客户端1
     err = client1.Start()
     ast.Nilf(err, "%v", err)
@@ -53,22 +57,23 @@ func TestEurekaClient1(t *testing.T) {
 
     <-time.NewTimer(60 * time.Second).C
 
-    // 创建客户端2（未开启服务注册与服务发现功能）
+    // 创建客户端2（未开启服务注册与服务发现功能），该客户端无需手工关闭
     client2, err := NewEurekaClient(&meta.EurekaConfig{})
     ast.Nilf(err, "%v", err)
 
+    // 更新日志级别
+    client2.logger.SetLevel(log.DebugLevel)
+
     // 从客户端2获取与eureka server通讯的http客户端
-    httpClient2 := client2.HttpClient
+    httpClient2 := client2.HttpClient()
 
     // 通过HttpClient与eureka server交互
     response2 := httpClient2.QueryApps(&meta.EurekaServer{ServiceUrl: serviceUrl})
     ast.Nilf(response2.Error, "%v", response2.Error)
     ast.True(len(response2.Apps) > 0)
 
-    // 停止客户端1，客户端2
+    // 停止客户端1
     response1 = client1.Stop()
-    ast.Nilf(response1.Error, "%v", response1.Error)
-    response1 = client2.Stop()
     ast.Nilf(response1.Error, "%v", response1.Error)
 }
 
@@ -102,6 +107,9 @@ func TestEurekaClient2(t *testing.T) {
         },
     })
     ast.Nilf(err, "%v", err)
+
+    // 更新日志级别
+    client.logger.SetLevel(log.DebugLevel)
 
     // 启动客户端（指定了 InstanceEnabledOnIt 参数，默认注册时服务实例状态为UP）
     err = client.Start()

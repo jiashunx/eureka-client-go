@@ -4,6 +4,7 @@ import (
     "context"
     "errors"
     "fmt"
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "time"
 )
@@ -11,6 +12,7 @@ import (
 // registryClient eureka服务注册客户端
 type registryClient struct {
     client    *EurekaClient
+    logger    log.Logger
     heartbeat bool                // 是否开启心跳
     status    meta.InstanceStatus // 服务实例状态
 }
@@ -31,7 +33,7 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
     if err != nil {
         return &CommonResponse{Error: errors.New("failed to create service instance, reason: " + err.Error())}
     }
-    response = client.HttpClient.Register(server, instance)
+    response = client.HttpClient().Register(server, instance)
     registry.heartbeat = response.Error == nil
     return response
 }
@@ -60,7 +62,7 @@ func (registry *registryClient) beat0(ctx context.Context) {
         if err != nil {
             return
         }
-        _ = client.HttpClient.Heartbeat(server, client.config.AppName, client.config.InstanceId)
+        _ = client.HttpClient().Heartbeat(server, client.config.AppName, client.config.InstanceId)
     }
 }
 
@@ -71,7 +73,7 @@ func (registry *registryClient) unRegister() *CommonResponse {
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    response := client.HttpClient.UnRegister(server, client.config.AppName, client.config.InstanceId)
+    response := client.HttpClient().UnRegister(server, client.config.AppName, client.config.InstanceId)
     registry.heartbeat = !(response.Error == nil)
     return response
 }
@@ -88,7 +90,7 @@ func (registry *registryClient) changeStatus(status meta.InstanceStatus) (respon
     }
     switch status {
     case meta.StatusUp, meta.StatusDown, meta.StatusStarting, meta.StatusOutOfService, meta.StatusUnknown:
-        response = client.HttpClient.ChangeStatus(server, client.config.AppName, client.config.InstanceId, status)
+        response = client.HttpClient().ChangeStatus(server, client.config.AppName, client.config.InstanceId, status)
         if response.Error != nil {
             break
         }
@@ -110,7 +112,7 @@ func (registry *registryClient) changeMetadata(metadata map[string]string) (resp
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    response = client.HttpClient.ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
+    response = client.HttpClient().ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
     if response.Error == nil && response.StatusCode == 200 {
         for key, value := range metadata {
             client.config.Metadata[key] = value

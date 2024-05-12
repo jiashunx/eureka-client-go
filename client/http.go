@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "github.com/google/uuid"
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "io/ioutil"
     "math"
@@ -15,7 +16,9 @@ import (
 )
 
 // HttpClient eureka客户端与服务端进行http通讯的客户端模型
-type HttpClient struct{}
+type HttpClient struct {
+    logger log.Logger
+}
 
 // doRequest 与eureka server通讯处理
 func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, method string, uri string, payload []byte) (ret *EurekaResponse) {

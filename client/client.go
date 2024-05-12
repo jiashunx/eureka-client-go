@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "github.com/google/uuid"
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "strings"
 )
@@ -37,7 +38,8 @@ type EurekaClient struct {
     ctxCancel       context.CancelFunc
     registryClient  *registryClient
     discoveryClient *discoveryClient
-    HttpClient      *HttpClient
+    httpClient      *HttpClient
+    logger          log.Logger
 }
 
 // Start 启动eureka客户端
@@ -65,8 +67,8 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) error {
         }
     }
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
-    client.registryClient = &registryClient{client: client}
-    client.discoveryClient = &discoveryClient{client: client}
+    client.registryClient = &registryClient{client: client, logger: client.logger}
+    client.discoveryClient = &discoveryClient{client: client, logger: client.logger}
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response := client.registryClient.start(subCtx); response.Error != nil {
         client.ctxCancel()
@@ -185,6 +187,27 @@ func (client *EurekaClient) AccessInstancesBySvip(svip string) ([]*meta.Instance
     return nil, clientNotStartedErr("failed to query available service instance, svip: %s", svip)
 }
 
+// HttpClient 获取与eureka通讯的 *HttpClient
+func (client *EurekaClient) HttpClient() *HttpClient {
+    return client.httpClient
+}
+
+// SetLogger 设置客户端日志对象
+func (client *EurekaClient) SetLogger(logger log.Logger) error {
+    if logger == nil {
+        return errors.New("log.Logger is nil")
+    }
+    client.logger = logger
+    if client.registryClient != nil {
+        client.registryClient.logger = logger
+    }
+    if client.discoveryClient != nil {
+        client.discoveryClient.logger = logger
+    }
+    client.httpClient.logger = logger
+    return nil
+}
+
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
 func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     if config == nil {
@@ -197,7 +220,8 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
     if err := eurekaConfig.Check(); err != nil {
         return nil, err
     }
-    httpClient := &HttpClient{}
+    logger := log.DefaultLogger()
+    httpClient := &HttpClient{logger: logger}
     return &EurekaClient{
         UUID:            strings.ReplaceAll(uuid.New().String(), "-", ""),
         config:          eurekaConfig,
@@ -206,6 +230,7 @@ func NewEurekaClient(config *meta.EurekaConfig) (*EurekaClient, error) {
         ctxCancel:       nil,
         registryClient:  nil,
         discoveryClient: nil,
-        HttpClient:      httpClient,
+        httpClient:      httpClient,
+        logger:          logger,
     }, nil
 }

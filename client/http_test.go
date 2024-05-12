@@ -1,6 +1,7 @@
 package client
 
 import (
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "github.com/stretchr/testify/assert"
     "testing"
@@ -33,7 +34,11 @@ var httpInstance = &meta.InstanceInfo{
     SecureVipAddress: "http-client-test-B",
 }
 
-var httpClient = &HttpClient{}
+var httpClient = &HttpClient{logger: log.DefaultLogger()}
+
+func TestInit(t *testing.T) {
+    httpClient.logger.SetLevel(log.DebugLevel)
+}
 
 func TestRegister(t *testing.T) {
     ast := assert.New(t)

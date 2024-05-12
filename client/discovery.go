@@ -4,6 +4,7 @@ import (
     "context"
     "errors"
     "fmt"
+    "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
     "math/rand"
     "time"
@@ -12,6 +13,7 @@ import (
 // discoveryClient eureka服务发现客户端
 type discoveryClient struct {
     client *EurekaClient
+    logger log.Logger
     Apps   map[string][]*meta.AppInfo // zone与服务列表映射
 }
 
@@ -48,7 +50,7 @@ func (discovery *discoveryClient) discovery0(ctx context.Context) {
     c := make(chan map[string][]*meta.AppInfo)
     for zone, server := range servers {
         go func(zone string, server *meta.EurekaServer) {
-            response := client.HttpClient.QueryApps(server)
+            response := client.HttpClient().QueryApps(server)
             if response.Error != nil {
                 c <- map[string][]*meta.AppInfo{zone: make([]*meta.AppInfo, 0)}
                 return
