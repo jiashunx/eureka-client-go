@@ -25,7 +25,7 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("start, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Errorf("start, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
             registry.logger.Tracef("start, OK")
@@ -74,7 +74,7 @@ func (registry *registryClient) beat0(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("beat0, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Errorf("beat0, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
             registry.logger.Tracef("beat0, OK")
@@ -100,7 +100,7 @@ func (registry *registryClient) unRegister() (response *CommonResponse) {
             response.Error = errors.New(fmt.Sprintf("unRegister, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Errorf("unRegister, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("unRegister, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
             registry.logger.Tracef("unRegister, OK")
@@ -124,7 +124,7 @@ func (registry *registryClient) changeStatus(status meta.InstanceStatus) (respon
             response.Error = errors.New(fmt.Sprintf("changeStatus, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Errorf("changeStatus, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("changeStatus, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
             registry.logger.Tracef("changeStatus, OK")
@@ -162,7 +162,7 @@ func (registry *registryClient) changeMetadata(metadata map[string]string) (resp
             response.Error = errors.New(fmt.Sprintf("changeMetadata, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Errorf("changeMetadata, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("changeMetadata, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
             registry.logger.Tracef("changeMetadata, OK")
@@ -202,7 +202,7 @@ func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, ac
             err = errors.New(fmt.Sprintf("buildInstanceInfo, recover error: %v", rc))
         }
         if err != nil {
-            registry.logger.Errorf("buildInstanceInfo, FAILED >>> error: %v", err)
+            registry.logger.Tracef("buildInstanceInfo, FAILED >>> error: %v", err)
         }
         if err == nil {
             registry.logger.Tracef("buildInstanceInfo, OK >>> instance: %v", instance)

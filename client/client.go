@@ -52,7 +52,7 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
             client.logger.Errorf("StartWithCtx, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Debugf("StartWithCtx, OK")
+            client.logger.Tracef("StartWithCtx, OK")
         }
     }()
     if client.config == nil {
@@ -96,7 +96,7 @@ func (client *EurekaClient) Stop() (response *CommonResponse) {
             client.logger.Errorf("Stop, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Debugf("Stop, OK")
+            client.logger.Tracef("Stop, OK")
         }
     }()
     if client.ctx != nil {
@@ -125,10 +125,10 @@ func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) (response *
             client.logger.Errorf("ChangeStatus, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Debugf("ChangeStatus, OK")
+            client.logger.Tracef("ChangeStatus, OK")
         }
     }()
-    client.logger.Debugf("ChangeStatus, PARAMS >>> status: %v", status)
+    client.logger.Tracef("ChangeStatus, PARAMS >>> status: %v", status)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -151,10 +151,10 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) (response
             client.logger.Errorf("ChangeMetadata, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Debugf("ChangeMetadata, OK")
+            client.logger.Tracef("ChangeMetadata, OK")
         }
     }()
-    client.logger.Debugf("ChangeMetadata, PARAMS >>> metadata: %v", metadata)
+    client.logger.Tracef("ChangeMetadata, PARAMS >>> metadata: %v", metadata)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -176,10 +176,10 @@ func (client *EurekaClient) AccessApp(appName string) (app *meta.AppInfo, err er
             client.logger.Errorf("AccessApp, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessApp, OK >>> app: %v", SummaryApp(app))
+            client.logger.Tracef("AccessApp, OK >>> app: %v", SummaryApp(app))
         }
     }()
-    client.logger.Debugf("AccessApp, PARAMS >>> appName: %v", appName)
+    client.logger.Tracef("AccessApp, PARAMS >>> appName: %v", appName)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -201,10 +201,10 @@ func (client *EurekaClient) AccessAppsByVip(vip string) (vipApps []*meta.AppInfo
             client.logger.Errorf("AccessAppsByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessAppsByVip, OK >>> vipApps: %v", vipApps)
+            client.logger.Tracef("AccessAppsByVip, OK >>> vipApps: %v", vipApps)
         }
     }()
-    client.logger.Debugf("AccessAppsByVip, PARAMS >>> vip: %v", SummaryApps(vipApps))
+    client.logger.Tracef("AccessAppsByVip, PARAMS >>> vip: %v", SummaryApps(vipApps))
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -226,10 +226,10 @@ func (client *EurekaClient) AccessAppsBySvip(svip string) (svipApps []*meta.AppI
             client.logger.Errorf("AccessAppsBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
+            client.logger.Tracef("AccessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
         }
     }()
-    client.logger.Debugf("AccessAppsBySvip, PARAMS >>> svip: %v", svip)
+    client.logger.Tracef("AccessAppsBySvip, PARAMS >>> svip: %v", svip)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -251,10 +251,10 @@ func (client *EurekaClient) AccessInstancesByVip(vip string) (instances []*meta.
             client.logger.Errorf("AccessInstancesByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
+            client.logger.Tracef("AccessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
-    client.logger.Debugf("AccessInstancesByVip, PARAMS >>> vip: %v", vip)
+    client.logger.Tracef("AccessInstancesByVip, PARAMS >>> vip: %v", vip)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
@@ -276,10 +276,10 @@ func (client *EurekaClient) AccessInstancesBySvip(svip string) (instances []*met
             client.logger.Errorf("AccessInstancesBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            client.logger.Debugf("AccessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
+            client.logger.Tracef("AccessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
-    client.logger.Debugf("AccessInstancesBySvip, PARAMS >>> svip: %v", svip)
+    client.logger.Tracef("AccessInstancesBySvip, PARAMS >>> svip: %v", svip)
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():

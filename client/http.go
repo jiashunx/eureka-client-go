@@ -38,7 +38,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         }
         ret = responses[len(responses)-1]
         if ret.Error != nil {
-            client.logger.Errorf("doRequest, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("doRequest, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
             client.logger.Tracef("doRequest, OK >>> body: %v", ret.Body)
@@ -146,7 +146,7 @@ func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.Ins
             ret.Error = errors.New(fmt.Sprintf("Register, recover error: %v", rc))
         }
         if ret.Error != nil {
-            client.logger.Errorf("Register, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("Register, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
             client.logger.Tracef("Register, OK")
@@ -306,7 +306,7 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
             ret.Error = errors.New(fmt.Sprintf("getApps, recover error: %v", rc))
         }
         if ret.Error != nil {
-            client.logger.Errorf("getApps, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("getApps, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
             client.logger.Tracef("getApps, OK >>> ret: %v", SummaryApps(ret.Apps))
@@ -362,7 +362,7 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
             ret.Error = errors.New(fmt.Sprintf("getInstances, recover error: %v", rc))
         }
         if ret.Error != nil {
-            client.logger.Errorf("getInstances, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("getInstances, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
             client.logger.Tracef("getInstances, OK >>> ret: %v", SummaryInstances(ret.Instances))
@@ -418,7 +418,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
             ret.Error = errors.New(fmt.Sprintf("getInstance, recover error: %v", rc))
         }
         if ret.Error != nil {
-            client.logger.Errorf("getInstance, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("getInstance, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
             client.logger.Tracef("getInstance, OK >>> ret: %v", SummaryInstance(ret.Instance))

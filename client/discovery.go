@@ -47,7 +47,7 @@ func (discovery *discoveryClient) discovery0(ctx context.Context) (err error) {
             err = errors.New(fmt.Sprintf("discovery0, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("discovery0, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("discovery0, FAILED >>> error: %v", err)
         }
     }()
     client := discovery.client
@@ -103,7 +103,7 @@ func (discovery *discoveryClient) accessApp(appName string) (app *meta.AppInfo, 
             err = errors.New(fmt.Sprintf("accessApp, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("accessApp, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("accessApp, FAILED >>> error: %v", err)
         }
         if err == nil {
             discovery.logger.Tracef("accessApp, OK >>> app: %v", SummaryApp(app))
@@ -162,7 +162,7 @@ func (discovery *discoveryClient) accessAppsByVip(vip string) (vipApps []*meta.A
             err = errors.New(fmt.Sprintf("accessAppsByVip, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("accessAppsByVip, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("accessAppsByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
             discovery.logger.Tracef("accessAppsByVip, OK >>> vipApps: %v", SummaryApps(vipApps))
@@ -238,7 +238,7 @@ func (discovery *discoveryClient) accessAppsBySvip(svip string) (svipApps []*met
             err = errors.New(fmt.Sprintf("accessAppsBySvip, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("accessAppsBySvip, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("accessAppsBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
             discovery.logger.Tracef("accessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
@@ -314,7 +314,7 @@ func (discovery *discoveryClient) accessInstancesByVip(vip string) (instances []
             err = errors.New(fmt.Sprintf("accessInstancesByVip, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("accessInstancesByVip, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("accessInstancesByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
             discovery.logger.Tracef("accessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
@@ -378,7 +378,7 @@ func (discovery *discoveryClient) accessInstancesBySvip(svip string) (instances 
             err = errors.New(fmt.Sprintf("accessInstancesBySvip, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Errorf("accessInstancesBySvip, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("accessInstancesBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
             discovery.logger.Tracef("accessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
