@@ -10,7 +10,8 @@ import (
 type Level int8
 
 const (
-    DebugLevel Level = iota - 1
+    TraceLevel Level = iota - 2
+    DebugLevel
     InfoLevel
     WarnLevel
     ErrorLevel
@@ -27,6 +28,8 @@ var LevelNames = map[Level]string{
 // Logger 日志接口
 type Logger interface {
     SetLevel(level Level)
+    Trace(a ...any)
+    Tracef(format string, a ...any)
     Debug(a ...any)
     Debugf(format string, a ...any)
     Info(a ...any)
@@ -49,6 +52,22 @@ func (logger *loggerImpl) SetLevel(level Level) {
     if i >= int8(DebugLevel) && i <= int8(ErrorLevel) {
         logger.level = Level(i)
     }
+}
+
+// Trace 输出trace日志
+func (logger *loggerImpl) Trace(a ...any) {
+    if logger.level > TraceLevel {
+        return
+    }
+    logger.print(TraceLevel, a...)
+}
+
+// Tracef 输出trace日志(参数格式化处理)
+func (logger *loggerImpl) Tracef(format string, a ...any) {
+    if logger.level > TraceLevel {
+        return
+    }
+    logger.printf(TraceLevel, format, a...)
 }
 
 // Debug 输出debug日志

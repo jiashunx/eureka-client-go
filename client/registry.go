@@ -28,7 +28,7 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
             registry.logger.Errorf("start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Debugf("start, OK")
+            registry.logger.Tracef("start, OK")
         }
     }()
     client := registry.client
@@ -77,7 +77,7 @@ func (registry *registryClient) beat0(ctx context.Context) (response *CommonResp
             registry.logger.Errorf("beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
-            registry.logger.Debugf("beat0, OK")
+            registry.logger.Tracef("beat0, OK")
         }
     }()
     client := registry.client
@@ -103,7 +103,7 @@ func (registry *registryClient) unRegister() (response *CommonResponse) {
             registry.logger.Errorf("unRegister, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Debugf("unRegister, OK")
+            registry.logger.Tracef("unRegister, OK")
         }
     }()
     client := registry.client
@@ -127,10 +127,10 @@ func (registry *registryClient) changeStatus(status meta.InstanceStatus) (respon
             registry.logger.Errorf("changeStatus, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Debugf("changeStatus, OK")
+            registry.logger.Tracef("changeStatus, OK")
         }
     }()
-    registry.logger.Debugf("changeStatus, PARAMS >>> status: %v", status)
+    registry.logger.Tracef("changeStatus, PARAMS >>> status: %v", status)
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -165,10 +165,10 @@ func (registry *registryClient) changeMetadata(metadata map[string]string) (resp
             registry.logger.Errorf("changeMetadata, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Debugf("changeMetadata, OK")
+            registry.logger.Tracef("changeMetadata, OK")
         }
     }()
-    registry.logger.Debugf("changeMetadata, PARAMS >>> metadata: %v", metadata)
+    registry.logger.Tracef("changeMetadata, PARAMS >>> metadata: %v", metadata)
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -205,10 +205,10 @@ func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, ac
             registry.logger.Errorf("buildInstanceInfo, FAILED >>> error: %v", err)
         }
         if err == nil {
-            registry.logger.Debugf("buildInstanceInfo, OK >>> instance: %v", instance)
+            registry.logger.Tracef("buildInstanceInfo, OK >>> instance: %v", instance)
         }
     }()
-    registry.logger.Debugf("buildInstanceInfo, PARAMS >>> status: %v, action: %v", status, action)
+    registry.logger.Tracef("buildInstanceInfo, PARAMS >>> status: %v, action: %v", status, action)
     config := registry.client.config
     instance = &meta.InstanceInfo{
         InstanceId:                    config.InstanceId,

@@ -83,7 +83,7 @@ func (discovery *discoveryClient) discovery0(ctx context.Context) (err error) {
     }
     close(c)
     discovery.Apps = apps
-    discovery.logger.Debugf("discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
+    discovery.logger.Tracef("discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
     return nil
 }
 
@@ -106,10 +106,10 @@ func (discovery *discoveryClient) accessApp(appName string) (app *meta.AppInfo, 
             discovery.logger.Errorf("accessApp, FAILED >>> error: %v", err)
         }
         if err == nil {
-            discovery.logger.Debugf("accessApp, OK >>> app: %v", SummaryApp(app))
+            discovery.logger.Tracef("accessApp, OK >>> app: %v", SummaryApp(app))
         }
     }()
-    discovery.logger.Debugf("accessApp, PARAMS >>> appName: %v", appName)
+    discovery.logger.Tracef("accessApp, PARAMS >>> appName: %v", appName)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -165,10 +165,10 @@ func (discovery *discoveryClient) accessAppsByVip(vip string) (vipApps []*meta.A
             discovery.logger.Errorf("accessAppsByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            discovery.logger.Debugf("accessAppsByVip, OK >>> vipApps: %v", SummaryApps(vipApps))
+            discovery.logger.Tracef("accessAppsByVip, OK >>> vipApps: %v", SummaryApps(vipApps))
         }
     }()
-    discovery.logger.Debugf("accessAppsByVip, PARAMS >>> vip: %v", vip)
+    discovery.logger.Tracef("accessAppsByVip, PARAMS >>> vip: %v", vip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -241,10 +241,10 @@ func (discovery *discoveryClient) accessAppsBySvip(svip string) (svipApps []*met
             discovery.logger.Errorf("accessAppsBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            discovery.logger.Debugf("accessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
+            discovery.logger.Tracef("accessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
         }
     }()
-    discovery.logger.Debugf("accessAppsBySvip, PARAMS >>> svip: %v", svip)
+    discovery.logger.Tracef("accessAppsBySvip, PARAMS >>> svip: %v", svip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -317,10 +317,10 @@ func (discovery *discoveryClient) accessInstancesByVip(vip string) (instances []
             discovery.logger.Errorf("accessInstancesByVip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            discovery.logger.Debugf("accessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
+            discovery.logger.Tracef("accessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
-    discovery.logger.Debugf("accessInstancesByVip, PARAMS >>> vip: %v", vip)
+    discovery.logger.Tracef("accessInstancesByVip, PARAMS >>> vip: %v", vip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -381,10 +381,10 @@ func (discovery *discoveryClient) accessInstancesBySvip(svip string) (instances 
             discovery.logger.Errorf("accessInstancesBySvip, FAILED >>> error: %v", err)
         }
         if err == nil {
-            discovery.logger.Debugf("accessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
+            discovery.logger.Tracef("accessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
         }
     }()
-    discovery.logger.Debugf("accessInstancesBySvip, PARAMS >>> svip: %v", svip)
+    discovery.logger.Tracef("accessInstancesBySvip, PARAMS >>> svip: %v", svip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }

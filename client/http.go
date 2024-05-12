@@ -41,13 +41,13 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             client.logger.Errorf("doRequest, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("doRequest, OK >>> body: %v", ret.Body)
+            client.logger.Tracef("doRequest, OK >>> body: %v", ret.Body)
         }
     }()
     if server == nil {
         panic(errors.New("EurekaServer is nil"))
     }
-    client.logger.Debugf("doRequest, PARAMS >>> expect: %d, method: %s, uri: %s, server: %#v", expect, method, uri, server)
+    client.logger.Tracef("doRequest, PARAMS >>> expect: %d, method: %s, uri: %s, server: %#v", expect, method, uri, server)
     // 遍历eureka server服务地址，循环发请求直至成功
     for idx, serviceUrl := range strings.Split(server.ServiceUrl, ",") {
         serviceUrl = strings.TrimSpace(serviceUrl)
@@ -89,7 +89,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         if URL.Port() == "" {
             request.RequestUrl = URL.Scheme + "://" + URL.Hostname() + URL.Path + strings.TrimSpace(uri)
         }
-        client.logger.Debugf("doRequest, create request object >>> idx: %d, method: %s, requestUrl: %s, body: %s", idx, method, request.RequestUrl, request.Body)
+        client.logger.Tracef("doRequest, create request object >>> idx: %d, method: %s, requestUrl: %s, body: %s", idx, method, request.RequestUrl, request.Body)
         httpRequest, err := http.NewRequest(request.Method, request.RequestUrl, strings.NewReader(request.Body))
         response.HttpRequest = httpRequest
         response.Error = err
@@ -149,10 +149,10 @@ func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.Ins
             client.logger.Errorf("Register, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("Register, OK")
+            client.logger.Tracef("Register, OK")
         }
     }()
-    client.logger.Debugf("Register, PARAMS >>> server: %v, instance: %v", server, instance)
+    client.logger.Tracef("Register, PARAMS >>> server: %v, instance: %v", server, instance)
     if instance == nil {
         return &CommonResponse{Error: errors.New("InstanceInfo is nil")}
     }
@@ -309,10 +309,10 @@ func (client *HttpClient) getApps(server *meta.EurekaServer, uri string) (ret *A
             client.logger.Errorf("getApps, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getApps, OK >>> ret: %v", SummaryApps(ret.Apps))
+            client.logger.Tracef("getApps, OK >>> ret: %v", SummaryApps(ret.Apps))
         }
     }()
-    client.logger.Debugf("getApps, PARAMS >>> server: %v, uri: %s", server, uri)
+    client.logger.Tracef("getApps, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
@@ -360,10 +360,10 @@ func (client *HttpClient) getInstances(server *meta.EurekaServer, uri string) (r
             client.logger.Errorf("getInstances, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getInstances, OK >>> ret: %v", SummaryInstances(ret.Instances))
+            client.logger.Tracef("getInstances, OK >>> ret: %v", SummaryInstances(ret.Instances))
         }
     }()
-    client.logger.Debugf("getInstances, PARAMS >>> server: %v, uri: %s", server, uri)
+    client.logger.Tracef("getInstances, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
@@ -411,10 +411,10 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
             client.logger.Errorf("getInstance, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Debugf("getInstance, OK >>> ret: %v", SummaryInstance(ret.Instance))
+            client.logger.Tracef("getInstance, OK >>> ret: %v", SummaryInstance(ret.Instance))
         }
     }()
-    client.logger.Debugf("getInstance, PARAMS >>> server: %v, uri: %s", server, uri)
+    client.logger.Tracef("getInstance, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
