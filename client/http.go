@@ -74,7 +74,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         if err != nil {
             response.Error = err
             responses = append(responses, response)
-            client.logger.Errorf("doRequest, failed to parse serviceUrl >> idx: %d, serviceUrl: %s, error: %v", idx, serviceUrl, err)
+            client.logger.Tracef("doRequest, failed to parse serviceUrl >> idx: %d, serviceUrl: %s, error: %v", idx, serviceUrl, err)
             continue
         }
         if URL.User != nil && URL.User.String() != "" {
@@ -95,7 +95,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
         response.Error = err
         if response.Error != nil {
             responses = append(responses, response)
-            client.logger.Errorf("doRequest, failed to create request object >>> idx: %d, error: %v", idx, err)
+            client.logger.Tracef("doRequest, failed to create request object >>> idx: %d, error: %v", idx, err)
             continue
         }
         if request.AuthUsername != "" {
@@ -129,7 +129,7 @@ func (client *HttpClient) doRequest(expect int, server *meta.EurekaServer, metho
             response.Error = errors.New(fmt.Sprintf("the http response code is incorrect, expect: %d, actual: %d", expect, response.HttpResponse.StatusCode))
         }
         if response.Error != nil {
-            client.logger.Errorf("doRequest, request failed >>> idx: %d, error: %v", idx, err)
+            client.logger.Tracef("doRequest, request failed >>> idx: %d, error: %v", idx, err)
         }
     }
     if len(responses) == 0 {
