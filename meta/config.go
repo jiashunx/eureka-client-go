@@ -1,7 +1,9 @@
 package meta
 
 import (
+    "encoding/json"
     "errors"
+    "fmt"
     "github.com/google/uuid"
     "net"
     "os"
@@ -41,81 +43,119 @@ var (
 // InstanceConfig 服务实例配置信息
 type InstanceConfig struct {
     // 应用名称, 默认: DefaultAppName
-    AppName string
+    AppName string `json:"app-name"`
     // 服务实例ID, 默认为生成的uuid
-    InstanceId string
+    InstanceId string `json:"instance-id"`
     // 实例的主机名, 默认为本机hostname
-    Hostname string
+    Hostname string `json:"hostname"`
     // 是否优先使用服务实例的IP地址(相较于 Hostname), 默认: DefaultPreferIpAddress
-    PreferIpAddress *bool
+    PreferIpAddress *bool `json:"prefer-ip-address"`
     // 实例的 IP Address, 默认为本机IP
-    IpAddress string
+    IpAddress string `json:"ip-address"`
     // 是否在eureka注册后立即启用实例以获取流量, 默认: DefaultInstanceEnabledOnIt
-    InstanceEnabledOnIt *bool
+    InstanceEnabledOnIt *bool `json:"instance-enabled-on-it"`
     // 实例关联的元数据名称值对, 默认为空map
-    Metadata map[string]string
+    Metadata map[string]string `json:"metadata"`
     // 客户端发送心跳的时间间隔, 默认: DefaultLeaseRenewalIntervalInSeconds
-    LeaseRenewalIntervalInSeconds int
+    LeaseRenewalIntervalInSeconds int `json:"lease-renewal-interval-in-seconds"`
     // eureka server等待心跳最长时间(超出此时间未接收到心跳则服务实例将不可用, 该值应大于 LeaseRenewalIntervalInSeconds), 默认: DefaultLeaseExpirationDurationInSeconds
-    LeaseExpirationDurationInSeconds int
+    LeaseExpirationDurationInSeconds int `json:"lease-expiration-duration-in-seconds"`
     // http通讯端口, 默认: DefaultNonSecurePort
-    NonSecurePort int
+    NonSecurePort int `json:"non-secure-port"`
     // 是否启用http通信端口, 默认: DefaultNonSecurePortEnabled
-    NonSecurePortEnabled *bool
+    NonSecurePortEnabled *bool `json:"non-secure-port-enabled"`
     // https通讯端口, 默认: DefaultSecurePort
-    SecurePort int
+    SecurePort int `json:"secure-port"`
     // 是否启用https通讯端口, 默认: DefaultSecurePortEnabled
-    SecurePortEnabled *bool
+    SecurePortEnabled *bool `json:"secure-port-enabled"`
     // 为此实例定义的虚拟主机名, 默认: AppName
-    VirtualHostname string
+    VirtualHostname string `json:"virtual-hostname"`
     // 为此实例定义的安全虚拟主机名, 默认: AppName
-    SecureVirtualHostname string
+    SecureVirtualHostname string `json:"secure-virtual-hostname"`
     // 实例的状态页面绝对URL路径, 默认为空
-    StatusPageUrl string
+    StatusPageUrl string `json:"status-page-url"`
     // 实例的状态页面相对URL路径, 默认: DefaultStatusPageUrlPath
-    StatusPageUrlPath string
+    StatusPageUrlPath string `json:"status-page-url-path"`
     // 实例的主页绝对URL路径, 默认为空
-    HomePageUrl string
+    HomePageUrl string `json:"home-page-url"`
     // 实例的主页相对URL路径, 默认: DefaultHomePageUrlPath
-    HomePageUrlPath string
+    HomePageUrlPath string `json:"home-page-url-path"`
     // 实例的健康检查页面绝对URL路径, 默认为空
-    HealthCheckUrl string
+    HealthCheckUrl string `json:"health-check-url"`
     // 实例的健康检查页面相对URL路径, 默认: DefaultHealthCheckUrlPath
-    HealthCheckUrlPath string
+    HealthCheckUrlPath string `json:"health-check-url-path"`
+}
+
+// ParseInstanceConfig 从map(json)中解析实例配置信息
+func ParseInstanceConfig(m map[string]interface{}) (instanceConfig *InstanceConfig, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("failed to parse instance config, recover error: %v", rc))
+        }
+    }()
+    str, err := json.Marshal(m)
+    if err != nil {
+        return nil, err
+    }
+    instanceConfig = &InstanceConfig{}
+    err = json.Unmarshal(str, instanceConfig)
+    if err != nil {
+        return nil, err
+    }
+    return instanceConfig, nil
 }
 
 // ClientConfig 客户端配置信息
 type ClientConfig struct {
     // eureka server BasicAuth用户名, 默认为空
-    EurekaServerUsername string
+    EurekaServerUsername string `json:"eureka-server-username"`
     // eureka server BasicAuth密码, 默认为空
-    EurekaServerPassword string
+    EurekaServerPassword string `json:"eureka-server-password"`
     // 读取eureka server的超时时间, 默认: DefaultEurekaServerReadTimeoutSeconds
-    EurekaServerReadTimeoutSeconds int
+    EurekaServerReadTimeoutSeconds int `json:"eureka-server-read-timeout-seconds"`
     // 连接eureka server的超时时间, 默认: DefaultEurekaServerConnectTimeoutSeconds
-    EurekaServerConnectTimeoutSeconds int
+    EurekaServerConnectTimeoutSeconds int `json:"eureka-server-connect-timeout-seconds"`
     // 是否开启服务注册, 默认: DefaultRegistryEnabled
-    RegistryEnabled *bool
+    RegistryEnabled *bool `json:"registry-enabled"`
     // 更新实例信息到eureka server的时间间隔, 默认: DefaultInstanceInfoReplicationIntervalSeconds
-    InstanceInfoReplicationIntervalSeconds int
+    InstanceInfoReplicationIntervalSeconds int `json:"instance-info-replication-interval-seconds"`
     // 初始化实例信息到eureka server的时间间隔, 默认: DefaultInitialInstanceInfoReplicationIntervalSeconds
-    InitialInstanceInfoReplicationIntervalSeconds int
+    InitialInstanceInfoReplicationIntervalSeconds int `json:"initial-instance-info-replication-interval-seconds"`
     // 是否开启服务发现, 默认: DefaultDiscoveryEnabled
-    DiscoveryEnabled *bool
+    DiscoveryEnabled *bool `json:"discovery-enabled"`
     // 从eureka server获取服务注册信息的时间间隔, 默认: DefaultRegistryFetchIntervalSeconds
-    RegistryFetchIntervalSeconds int
+    RegistryFetchIntervalSeconds int `json:"registry-fetch-interval-seconds"`
     // 优先从当前相同zone获取可用服务实例, 默认: DefaultPreferSameZoneEureka
-    PreferSameZoneEureka *bool
+    PreferSameZoneEureka *bool `json:"prefer-same-zone-eureka"`
     // 当前服务实例归属region, 默认: DefaultRegion
-    Region string
+    Region string `json:"region"`
     // 所有region及zone信息
-    AvailableZones map[string]string
+    AvailableZones map[string]string `json:"available-zones"`
     // 当前服务实例归属zone, 默认: DefaultZone
-    Zone string
+    Zone string `json:"zone"`
     // defaultZone的eureka server服务地址信息, 以逗号分隔, 默认: DefaultServiceUrl
-    ServiceUrlOfDefaultZone string
+    ServiceUrlOfDefaultZone string `json:"service-url-of-default-zone"`
     // 所有zone的eureka server服务地址信息, 若 AvailableZones 中的zone未在当前属性指定eureka server服务地址, 默认: DefaultServiceUrl
-    ServiceUrlOfAllZone map[string]string
+    ServiceUrlOfAllZone map[string]string `json:"service-url-of-all-zone"`
+}
+
+// ParseClientConfig 从map(json)中解析客户端配置信息
+func ParseClientConfig(m map[string]interface{}) (clientConfig *ClientConfig, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("failed to parse client config, recover error: %v", rc))
+        }
+    }()
+    str, err := json.Marshal(m)
+    if err != nil {
+        return nil, err
+    }
+    clientConfig = &ClientConfig{}
+    err = json.Unmarshal(str, clientConfig)
+    if err != nil {
+        return nil, err
+    }
+    return clientConfig, nil
 }
 
 // EurekaConfig eureka客户端配置信息
@@ -353,6 +393,28 @@ func (config *EurekaConfig) Check() error {
     return nil
 }
 
+// ParseEurekaConfig 从map(json)中解析eureka客户端配置信息
+func ParseEurekaConfig(m map[string]interface{}) (eurekaConfig *EurekaConfig, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
+        }
+    }()
+    str, err := json.Marshal(m)
+    if err != nil {
+        return nil, err
+    }
+    eurekaConfig = &EurekaConfig{}
+    err = json.Unmarshal(str, eurekaConfig)
+    if err != nil {
+        return nil, err
+    }
+    if err = eurekaConfig.Check(); err != nil {
+        return nil, err
+    }
+    return eurekaConfig, nil
+}
+
 // HostInfo 当前主机信息
 type HostInfo struct {
     // 主机名
@@ -401,17 +463,36 @@ func GetLocalIpv4Address() (string, error) {
 // EurekaServer eureka server 连接信息
 type EurekaServer struct {
     // 归属Region(非必需)
-    Region string
+    Region string `json:"region"`
     // 归属Zone(非必需)
-    Zone string
+    Zone string `json:"zone"`
     // 服务地址
-    ServiceUrl string
+    ServiceUrl string `json:"service-url"`
     // BasicAuth用户名, 若 ServiceUrl 中指定了安全认证信息, 则其优先级更高
-    Username string
+    Username string `json:"username"`
     // BasicAuth密码, 若 ServiceUrl 中指定了安全认证信息, 则其优先级更高
-    Password string
+    Password string `json:"password"`
     // 读超时秒数
-    ReadTimeoutSeconds int
+    ReadTimeoutSeconds int `json:"read-timeout-seconds"`
     // 连接超时秒数
-    ConnectTimeoutSeconds int
+    ConnectTimeoutSeconds int `json:"connect-timeout-seconds"`
+}
+
+// ParseEurekaServer 从map(json)中解析eureka server连接信息
+func ParseEurekaServer(m map[string]interface{}) (eurekaServer *EurekaServer, err error) {
+    defer func() {
+        if rc := recover(); rc != nil {
+            err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
+        }
+    }()
+    str, err := json.Marshal(m)
+    if err != nil {
+        return nil, err
+    }
+    eurekaServer = &EurekaServer{}
+    err = json.Unmarshal(str, eurekaServer)
+    if err != nil {
+        return nil, err
+    }
+    return eurekaServer, nil
 }
