@@ -18,8 +18,9 @@ type discoveryClient struct {
 }
 
 // start 启动eureka服务发现客户端
-func (discovery *discoveryClient) start(ctx context.Context) {
+func (discovery *discoveryClient) start(ctx context.Context) *CommonResponse {
     go discovery.discovery(ctx)
+    return nil
 }
 
 // discovery 具体服务发现处理逻辑

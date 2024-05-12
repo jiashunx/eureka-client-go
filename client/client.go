@@ -75,11 +75,17 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response = client.registryClient.start(subCtx); response.Error != nil {
+        client.logger.Errorf("StartWithCtx, failed to start registry client, try to stop eureka client")
         client.Stop()
         client.ctxCancel()
         return response
     }
-    client.discoveryClient.start(subCtx)
+    if response = client.discoveryClient.start(subCtx); response.Error != nil {
+        client.logger.Errorf("StartWithCtx, failed to start discovery client, try to stop eureka client")
+        client.Stop()
+        client.ctxCancel()
+        return response
+    }
     return &CommonResponse{Error: nil}
 }
 
