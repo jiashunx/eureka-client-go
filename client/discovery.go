@@ -54,6 +54,14 @@ func (discovery *discoveryClient) discovery0() {
                 c <- map[string][]*meta.AppInfo{zone: make([]*meta.AppInfo, 0)}
                 return
             }
+            for _, app := range response.Apps {
+                app.Region = client.config.Region
+                app.Zone = zone
+                for _, instance := range app.Instances {
+                    instance.Region = app.Region
+                    instance.Zone = app.Zone
+                }
+            }
             c <- map[string][]*meta.AppInfo{zone: response.Apps}
         }(zone, server)
     }
@@ -88,7 +96,7 @@ func (discovery *discoveryClient) accessApp(appName string) (*meta.AppInfo, erro
             app = FilterApp(apps, appName)
             instances := app.AvailableInstances()
             if instances != nil && len(instances) > 0 {
-                return &meta.AppInfo{Name: app.Name, Instances: instances}, nil
+                return app.CopyWithInstances(instances), nil
             }
             app = nil
         }
@@ -102,7 +110,7 @@ func (discovery *discoveryClient) accessApp(appName string) (*meta.AppInfo, erro
             app = FilterApp(v.([]*meta.AppInfo), appName)
             instances := app.AvailableInstances()
             if instances != nil && len(instances) > 0 {
-                app = &meta.AppInfo{Name: app.Name, Instances: instances}
+                app = app.CopyWithInstances(instances)
                 return false, nil
             }
             app = nil
@@ -139,7 +147,7 @@ func (discovery *discoveryClient) accessAppsByVip(vip string) ([]*meta.AppInfo, 
                 for _, vipApp := range vipApps {
                     instances := vipApp.AvailableInstances()
                     if instances != nil && len(instances) > 0 {
-                        accessApps = append(accessApps, &meta.AppInfo{Name: vipApp.Name, Instances: instances})
+                        accessApps = append(accessApps, vipApp.CopyWithInstances(instances))
                     }
                 }
                 if len(accessApps) > 0 {
@@ -161,7 +169,7 @@ func (discovery *discoveryClient) accessAppsByVip(vip string) ([]*meta.AppInfo, 
                 for _, vipApp := range vipApps {
                     instances := vipApp.AvailableInstances()
                     if instances != nil && len(instances) > 0 {
-                        accessApps = append(accessApps, &meta.AppInfo{Name: vipApp.Name, Instances: instances})
+                        accessApps = append(accessApps, vipApp.CopyWithInstances(instances))
                     }
                 }
                 if len(accessApps) > 0 {
@@ -204,7 +212,7 @@ func (discovery *discoveryClient) accessAppsBySvip(svip string) ([]*meta.AppInfo
                 for _, svipApp := range svipApps {
                     instances := svipApp.AvailableInstances()
                     if instances != nil && len(instances) > 0 {
-                        accessApps = append(accessApps, &meta.AppInfo{Name: svipApp.Name, Instances: instances})
+                        accessApps = append(accessApps, svipApp.CopyWithInstances(instances))
                     }
                 }
                 if len(accessApps) > 0 {
@@ -226,7 +234,7 @@ func (discovery *discoveryClient) accessAppsBySvip(svip string) ([]*meta.AppInfo
                 for _, svipApp := range svipApps {
                     instances := svipApp.AvailableInstances()
                     if instances != nil && len(instances) > 0 {
-                        accessApps = append(accessApps, &meta.AppInfo{Name: svipApp.Name, Instances: instances})
+                        accessApps = append(accessApps, svipApp.CopyWithInstances(instances))
                     }
                 }
                 if len(accessApps) > 0 {
@@ -265,8 +273,8 @@ func (discovery *discoveryClient) accessInstancesByVip(vip string) ([]*meta.Inst
         if apps, ok := discovery.Apps[config.Zone]; ok {
             instances = FilterInstancesByVip(apps, vip)
             if instances != nil && len(instances) > 0 {
-                newApp := &meta.AppInfo{Instances: instances}
-                instances = newApp.AvailableInstances()
+                tmpApp := &meta.AppInfo{Instances: instances}
+                instances = tmpApp.AvailableInstances()
                 if instances != nil && len(instances) > 0 {
                     return instances, nil
                 }
@@ -282,8 +290,8 @@ func (discovery *discoveryClient) accessInstancesByVip(vip string) ([]*meta.Inst
         if v != nil {
             instances = FilterInstancesByVip(v.([]*meta.AppInfo), vip)
             if instances != nil && len(instances) > 0 {
-                newApp := &meta.AppInfo{Instances: instances}
-                instances = newApp.AvailableInstances()
+                tmpApp := &meta.AppInfo{Instances: instances}
+                instances = tmpApp.AvailableInstances()
                 if instances != nil && len(instances) > 0 {
                     return false, nil
                 }
@@ -318,8 +326,8 @@ func (discovery *discoveryClient) accessInstancesBySvip(svip string) ([]*meta.In
         if apps, ok := discovery.Apps[config.Zone]; ok {
             instances = FilterInstancesBySvip(apps, svip)
             if instances != nil && len(instances) > 0 {
-                newApp := &meta.AppInfo{Instances: instances}
-                instances = newApp.AvailableInstances()
+                tmpApp := &meta.AppInfo{Instances: instances}
+                instances = tmpApp.AvailableInstances()
                 if instances != nil && len(instances) > 0 {
                     return instances, nil
                 }
@@ -335,8 +343,8 @@ func (discovery *discoveryClient) accessInstancesBySvip(svip string) ([]*meta.In
         if v != nil {
             instances = FilterInstancesBySvip(v.([]*meta.AppInfo), svip)
             if instances != nil && len(instances) > 0 {
-                newApp := &meta.AppInfo{Instances: instances}
-                instances = newApp.AvailableInstances()
+                tmpApp := &meta.AppInfo{Instances: instances}
+                instances = tmpApp.AvailableInstances()
                 if instances != nil && len(instances) > 0 {
                     return false, nil
                 }

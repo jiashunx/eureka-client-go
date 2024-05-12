@@ -206,6 +206,8 @@ type InstanceInfo struct {
     LastUpdatedTimestamp          string            `json:"lastUpdatedTimestamp"`
     LastDirtyTimestamp            string            `json:"lastDirtyTimestamp"`
     ActionType                    ActionType        `json:"actionType"`
+    Region                        string            `json:"-"`
+    Zone                          string            `json:"-"`
 }
 
 // ToJson 对象转json
@@ -251,6 +253,8 @@ func (instance *InstanceInfo) Copy() *InstanceInfo {
         LastUpdatedTimestamp:          instance.LastUpdatedTimestamp,
         LastDirtyTimestamp:            instance.LastDirtyTimestamp,
         ActionType:                    instance.ActionType,
+        Region:                        instance.Region,
+        Zone:                          instance.Zone,
     }
     if instance.Metadata != nil {
         newInstance.Metadata = make(map[string]string)
