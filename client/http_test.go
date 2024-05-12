@@ -4,6 +4,7 @@ import (
     "github.com/jiashunx/eureka-client-go/meta"
     "github.com/stretchr/testify/assert"
     "testing"
+    "time"
 )
 
 // 所有eureka server均无安全认证
@@ -21,11 +22,12 @@ var eurekaServer2 = &meta.EurekaServer{
 
 var httpInstance = &meta.InstanceInfo{
     AppName:    "http-client-test",
-    InstanceId: "127.0.0.1:8080",
+    InstanceId: "127.0.0.1:18080",
     IpAddr:     "127.0.0.1",
+    Status:     meta.StatusUp,
     SecurePort: &meta.PortWrapper{
         Enabled: meta.StrTrue,
-        Port:    8080,
+        Port:    18080,
     },
     VipAddress:       "http-client-test-A",
     SecureVipAddress: "http-client-test-B",
@@ -41,6 +43,7 @@ func TestRegister(t *testing.T) {
 }
 
 func TestHeartbeat(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleHeartbeat(serviceUrl1, httpInstance.AppName, httpInstance.InstanceId)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -48,6 +51,7 @@ func TestHeartbeat(t *testing.T) {
 }
 
 func TestQueryApps(t *testing.T) {
+    <-time.NewTimer(60 * time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQueryApps(serviceUrl1)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -56,6 +60,7 @@ func TestQueryApps(t *testing.T) {
 }
 
 func TestQueryApp(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQueryApp(serviceUrl1, httpInstance.AppName)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -64,6 +69,7 @@ func TestQueryApp(t *testing.T) {
 }
 
 func TestQueryAppInstance(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQueryAppInstance(serviceUrl1, httpInstance.AppName, httpInstance.InstanceId)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -72,6 +78,7 @@ func TestQueryAppInstance(t *testing.T) {
 }
 
 func TestQueryInstance(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQueryInstance(serviceUrl1, httpInstance.InstanceId)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -80,6 +87,7 @@ func TestQueryInstance(t *testing.T) {
 }
 
 func TestChangeStatus(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleChangeStatus(serviceUrl1, httpInstance.AppName, httpInstance.InstanceId, meta.StatusOutOfService)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -87,6 +95,7 @@ func TestChangeStatus(t *testing.T) {
 }
 
 func TestModifyMetadata(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleModifyMetadata(serviceUrl1, httpInstance.AppName, httpInstance.InstanceId, map[string]string{"hello": "world"})
     ast.Nilf(response.Error, "%v", response.Error)
@@ -94,6 +103,7 @@ func TestModifyMetadata(t *testing.T) {
 }
 
 func TestQueryVipApps(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQueryVipApps(serviceUrl1, httpInstance.VipAddress)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -102,6 +112,7 @@ func TestQueryVipApps(t *testing.T) {
 }
 
 func TestQuerySvipApps(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleQuerySvipApps(serviceUrl1, httpInstance.SecureVipAddress)
     ast.Nilf(response.Error, "%v", response.Error)
@@ -110,6 +121,7 @@ func TestQuerySvipApps(t *testing.T) {
 }
 
 func TestUnRegister(t *testing.T) {
+    <-time.NewTimer(time.Second).C
     ast := assert.New(t)
     response := httpClient.SimpleUnRegister(serviceUrl1, httpInstance.AppName, httpInstance.InstanceId)
     ast.Nilf(response.Error, "%v", response.Error)
