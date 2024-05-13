@@ -47,13 +47,13 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     defer func() {
         if rc := recover(); rc != nil {
             response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("StartWithCtx, recover error: %v", rc))
+            response.Error = errors.New(fmt.Sprintf("EurekaClient.StartWithCtx, recover error: %v", rc))
         }
         if response.Error != nil {
-            client.logger.Errorf("StartWithCtx, FAILED >>> error: %v", response.Error)
+            client.logger.Errorf("EurekaClient.StartWithCtx, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Tracef("StartWithCtx, OK")
+            client.logger.Tracef("EurekaClient.StartWithCtx, OK")
         }
     }()
     if client.config == nil {
@@ -76,13 +76,13 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response = client.registryClient.start(subCtx); response.Error != nil {
-        client.logger.Errorf("StartWithCtx, failed to start registry client, try to stop eureka client")
+        client.logger.Errorf("EurekaClient.StartWithCtx, failed to start registry client, try to stop eureka client")
         client.Stop()
         client.ctxCancel()
         return response
     }
     if response = client.discoveryClient.start(subCtx); response.Error != nil {
-        client.logger.Errorf("StartWithCtx, failed to start discovery client, try to stop eureka client")
+        client.logger.Errorf("EurekaClient.StartWithCtx, failed to start discovery client, try to stop eureka client")
         client.Stop()
         client.ctxCancel()
         return response
@@ -194,13 +194,13 @@ func (client *EurekaClient) AccessInstanceBySvip(svip string) (*meta.InstanceInf
 func (client *EurekaClient) exec(name string, r func(params ...any) (any, error), params ...any) (ret any, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("%s, recover error: %v", name, rc))
+            err = errors.New(fmt.Sprintf("EurekaClient.%s, recover error: %v", name, rc))
         }
         if err != nil {
-            client.logger.Errorf("%s, FAILED >>> error: %v", name, err)
+            client.logger.Errorf("EurekaClient.%s, FAILED >>> error: %v", name, err)
         }
         if err == nil {
-            client.logger.Tracef("%s, OK >>> ret: %v", name, ret)
+            client.logger.Tracef("EurekaClient.%s, OK >>> ret: %v", name, ret)
         }
     }()
     if len(params) > 0 {
@@ -211,7 +211,7 @@ func (client *EurekaClient) exec(name string, r func(params ...any) (any, error)
             sl = append(sl, "arg"+strconv.Itoa(idx)+": %v")
             sp = append(sp, param)
         }
-        client.logger.Tracef("%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
+        client.logger.Tracef("EurekaClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
     }
     if client.ctx != nil {
         select {

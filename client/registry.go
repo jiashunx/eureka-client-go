@@ -22,13 +22,13 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
     defer func() {
         if rc := recover(); rc != nil {
             response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("start, recover error: %v", rc))
+            response.Error = errors.New(fmt.Sprintf("registryClient.start, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("start, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("registryClient.start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Tracef("start, OK")
+            registry.logger.Tracef("registryClient.start, OK")
         }
     }()
     client := registry.client
@@ -71,13 +71,13 @@ func (registry *registryClient) beat0(ctx context.Context) (response *CommonResp
     defer func() {
         if rc := recover(); rc != nil {
             response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("beat0, recover error: %v", rc))
+            response.Error = errors.New(fmt.Sprintf("registryClient.beat0, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("beat0, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("registryClient.beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
-            registry.logger.Tracef("beat0, OK")
+            registry.logger.Tracef("registryClient.beat0, OK")
         }
     }()
     client := registry.client

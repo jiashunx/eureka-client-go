@@ -98,7 +98,7 @@ func FilterInstancesBySvip(apps []*meta.AppInfo, svip string) []*meta.InstanceIn
 func RandomLoopMap(m map[string]interface{}, f func(k string, v interface{}) (bool, error)) (err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to loop map (random), reason: %v", rc))
+            err = errors.New(fmt.Sprintf("RandomLoopMap, recover error: %v", rc))
         }
     }()
     if m == nil || len(m) == 0 || f == nil {

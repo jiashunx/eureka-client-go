@@ -64,7 +64,7 @@ func (app *AppInfo) AvailableInstances() []*InstanceInfo {
 func ParseAppInfo(data []byte) (app *AppInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to parse app info, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseAppInfo, recover error: %v", rc))
         }
     }()
     app = &AppInfo{}

@@ -45,10 +45,10 @@ FL:
 func (discovery *discoveryClient) discovery0(ctx context.Context) (err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("discovery0, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("discoveryClient.discovery0, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Tracef("discovery0, FAILED >>> error: %v", err)
+            discovery.logger.Tracef("discoveryClient.discovery0, FAILED >>> error: %v", err)
         }
     }()
     client := discovery.client
@@ -84,7 +84,7 @@ func (discovery *discoveryClient) discovery0(ctx context.Context) (err error) {
     }
     close(c)
     discovery.Apps = apps
-    discovery.logger.Tracef("discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
+    discovery.logger.Tracef("discoveryClient.discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
     return nil
 }
 

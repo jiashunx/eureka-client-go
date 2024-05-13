@@ -229,7 +229,7 @@ func ParseInstanceInfo(data []byte) (instance *InstanceInfo, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             instance = nil
-            err = errors.New(fmt.Sprintf("failed to parse instance info, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseInstanceInfo, recover error: %v", rc))
         }
     }()
     instance = &InstanceInfo{}

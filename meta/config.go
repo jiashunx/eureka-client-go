@@ -90,7 +90,7 @@ type InstanceConfig struct {
 func ParseInstanceConfig(data []byte) (config *InstanceConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to parse instance config, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseInstanceConfig, recover error: %v", rc))
         }
     }()
     config = &InstanceConfig{}
@@ -135,7 +135,7 @@ type ClientConfig struct {
 func ParseClientConfig(data []byte) (config *ClientConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to parse client config, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseClientConfig, recover error: %v", rc))
         }
     }()
     config = &ClientConfig{}
@@ -381,7 +381,7 @@ func (config *EurekaConfig) Check() error {
 func ParseEurekaConfig(data []byte) (config *EurekaConfig, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseEurekaConfig, recover error: %v", rc))
         }
     }()
     config = &EurekaConfig{}
@@ -408,11 +408,11 @@ func GetLocalHostInfo() (*HostInfo, error) {
     if LocalHostInfo == nil {
         hostname, err := os.Hostname()
         if err != nil {
-            return nil, errors.New("failed to get the local hostname, reason: " + err.Error())
+            return nil, errors.New(fmt.Sprintf("failed to get the local hostname, error: %v", err))
         }
         ipAddress, err := GetLocalIpv4Address()
         if err != nil {
-            return nil, errors.New("failed to get the local ip, reason: " + err.Error())
+            return nil, errors.New(fmt.Sprintf("failed to get the local ip, error: %v", err))
         }
         LocalHostInfo = &HostInfo{
             hostname,
@@ -459,7 +459,7 @@ type EurekaServer struct {
 func ParseEurekaServer(data []byte) (server *EurekaServer, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("failed to parse eureka config, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("ParseEurekaServer, recover error: %v", rc))
         }
     }()
     server = &EurekaServer{}
