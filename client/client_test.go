@@ -9,10 +9,10 @@ import (
     "time"
 )
 
-var serviceUrl = "http://admin:123123@127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
+var TestEurekaServiceUrl = "http://admin:123123@127.0.0.1:20000/eureka,http://192.168.138.130:20000/eureka"
 
-// TestEurekaClient1 客户端测试样例1(简单服务注册及服务发现客户端+手工更新服务实例状态、关闭服务注册与服务发现的客户端)
-func TestEurekaClient1(t *testing.T) {
+// TestEurekaClient_Case1 客户端测试样例1(简单服务注册及服务发现客户端+手工更新服务实例状态、关闭服务注册与服务发现的客户端)
+func TestEurekaClient_Case1(t *testing.T) {
     ast := assert.New(t)
 
     // 创建客户端1
@@ -24,7 +24,7 @@ func TestEurekaClient1(t *testing.T) {
             Hostname:      "127.0.0.1",
         },
         ClientConfig: &meta.ClientConfig{
-            ServiceUrlOfDefaultZone: serviceUrl,
+            ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
         },
     })
     ast.Nilf(err, "%v", err)
@@ -40,6 +40,13 @@ func TestEurekaClient1(t *testing.T) {
 
     // 客户端1默认注册时实例状态为STARTING，需手工修改状态为UP
     response1 = client1.ChangeStatus(meta.StatusUp)
+    ast.Nilf(response1.Error, "%v", response1.Error)
+
+    // 修改metadata
+    response1 = client1.ChangeMetadata(map[string]string{
+        "hello": "world",
+        "name":  "jack",
+    })
     ast.Nilf(response1.Error, "%v", response1.Error)
 
     <-time.NewTimer(60 * time.Second).C
@@ -68,7 +75,7 @@ func TestEurekaClient1(t *testing.T) {
     httpClient2 := client2.HttpClient()
 
     // 通过HttpClient与eureka server交互
-    response2 := httpClient2.QueryApps(&meta.EurekaServer{ServiceUrl: serviceUrl})
+    response2 := httpClient2.QueryApps(&meta.EurekaServer{ServiceUrl: TestEurekaServiceUrl})
     ast.Nilf(response2.Error, "%v", response2.Error)
     ast.True(len(response2.Apps) > 0)
 
@@ -77,19 +84,21 @@ func TestEurekaClient1(t *testing.T) {
     ast.Nilf(response1.Error, "%v", response1.Error)
 }
 
-// TestEurekaClient2 客户端测试样例2(多zone服务注册与服务发现客户端+服务实例启动即可用)
-func TestEurekaClient2(t *testing.T) {
+// TestEurekaClient_Case2 客户端测试样例2(多zone服务注册与服务发现客户端+服务实例启动即可用)
+func TestEurekaClient_Case2(t *testing.T) {
     ast := assert.New(t)
 
     // 创建客户端
     client, err := NewEurekaClient(&meta.EurekaConfig{
         InstanceConfig: &meta.InstanceConfig{
-            AppName:             "eureka-client-test2",
-            InstanceId:          "127.0.0.1:28082",
-            SecurePort:          28082,
-            IpAddress:           "127.0.0.1",
-            PreferIpAddress:     &meta.True,
-            InstanceEnabledOnIt: &meta.True,
+            AppName:               "eureka-client-test2",
+            InstanceId:            "127.0.0.1:28082",
+            SecurePort:            28082,
+            IpAddress:             "127.0.0.1",
+            PreferIpAddress:       &meta.True,
+            InstanceEnabledOnIt:   &meta.True,
+            VirtualHostname:       "ec-test2",
+            SecureVirtualHostname: "secure-ec-test2",
         },
         ClientConfig: &meta.ClientConfig{
             PreferSameZoneEureka: &meta.False,
@@ -101,7 +110,7 @@ func TestEurekaClient2(t *testing.T) {
                 "uk":  "zone4,zone5,zone6",
             },
             ServiceUrlOfAllZone: map[string]string{
-                "zone1": serviceUrl,
+                "zone1": TestEurekaServiceUrl,
                 "zone2": "",
             },
         },
@@ -121,6 +130,30 @@ func TestEurekaClient2(t *testing.T) {
     app, err := client.AccessApp(client.config.AppName)
     ast.Nilf(err, "%v", err)
     ast.NotNil(app)
+    vipApps, err := client.AccessAppsByVip("ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(vipApps))
+    vipInstance, err := client.AccessAppInstanceByVip("ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(vipInstance, "%v", vipInstance)
+    svipApps, err := client.AccessAppsBySvip("secure-ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(svipApps))
+    svipInstance, err := client.AccessAppInstanceBySvip("secure-ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(svipInstance, "%v", svipInstance)
+    vipInstances, err := client.AccessInstancesByVip("ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(vipInstances))
+    vipInstance, err = client.AccessInstanceByVip("ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(vipInstance, "%v", vipInstance)
+    svipInstances, err := client.AccessInstancesBySvip("secure-ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(svipInstances))
+    svipInstance, err = client.AccessInstanceBySvip("secure-ec-test2")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(svipInstance, "%v", svipInstance)
 
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
     response = client.Stop()
