@@ -7,6 +7,7 @@ import (
     "github.com/google/uuid"
     "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
+    "strconv"
     "strings"
 )
 
@@ -90,206 +91,134 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
 }
 
 // Stop 关闭eureka客户端
-func (client *EurekaClient) Stop() (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("Stop, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            client.logger.Errorf("Stop, FAILED >>> error: %v", response.Error)
-        }
+func (client *EurekaClient) Stop() *CommonResponse {
+    ret, _ := client.exec("Stop", func(params ...any) (any, error) {
+        response := client.registryClient.unRegister()
         if response.Error == nil {
-            client.logger.Tracef("Stop, OK")
+            client.ctxCancel()
         }
-    }()
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return &CommonResponse{Error: clientHasBeenStoppedErr()}
-        default:
-            response = client.registryClient.unRegister()
-            if response.Error == nil {
-                client.ctxCancel()
-            }
-            return response
-        }
-    }
-    return &CommonResponse{Error: clientNotStartedErr()}
+        return response, nil
+    })
+    return ret.(*CommonResponse)
 }
 
 // ChangeStatus 变更服务状态
-func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("ChangeStatus, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            client.logger.Errorf("ChangeStatus, FAILED >>> error: %v", response.Error)
-        }
-        if response.Error == nil {
-            client.logger.Tracef("ChangeStatus, OK")
-        }
-    }()
-    client.logger.Tracef("ChangeStatus, PARAMS >>> status: %v", status)
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return &CommonResponse{Error: clientHasBeenStoppedErr()}
-        default:
-            return client.registryClient.changeStatus(status)
-        }
-    }
-    return &CommonResponse{Error: clientNotStartedErr()}
+func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResponse {
+    ret, _ := client.exec("ChangeStatus", func(params ...any) (any, error) {
+        return client.registryClient.changeStatus(params[0].(meta.InstanceStatus)), nil
+    }, status)
+    return ret.(*CommonResponse)
 }
 
 // ChangeMetadata 变更元数据
-func (client *EurekaClient) ChangeMetadata(metadata map[string]string) (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("ChangeMetadata, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            client.logger.Errorf("ChangeMetadata, FAILED >>> error: %v", response.Error)
-        }
-        if response.Error == nil {
-            client.logger.Tracef("ChangeMetadata, OK")
-        }
-    }()
-    client.logger.Tracef("ChangeMetadata, PARAMS >>> metadata: %v", metadata)
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return &CommonResponse{Error: clientHasBeenStoppedErr()}
-        default:
-            return client.registryClient.changeMetadata(metadata)
-        }
-    }
-    return &CommonResponse{Error: clientNotStartedErr()}
+func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonResponse {
+    ret, _ := client.exec("ChangeMetadata", func(params ...any) (any, error) {
+        return client.registryClient.changeMetadata(params[0].(map[string]string)), nil
+    }, metadata)
+    return ret.(*CommonResponse)
 }
 
 // AccessApp 查询可用服务信息
-func (client *EurekaClient) AccessApp(appName string) (app *meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("AccessApp, recover error: %v", rc))
-        }
-        if err != nil {
-            client.logger.Errorf("AccessApp, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            client.logger.Tracef("AccessApp, OK >>> app: %v", SummaryApp(app))
-        }
-    }()
-    client.logger.Tracef("AccessApp, PARAMS >>> appName: %v", appName)
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr()
-        default:
-            return client.discoveryClient.accessApp(appName)
-        }
-    }
-    return nil, clientNotStartedErr()
+func (client *EurekaClient) AccessApp(appName string) (*meta.AppInfo, error) {
+    ret, err := client.exec("AccessApp", func(params ...any) (any, error) {
+        return client.discoveryClient.accessApp(params[0].(string))
+    }, appName)
+    return ret.(*meta.AppInfo), err
 }
 
 // AccessAppsByVip 查询指定vip的可用服务列表
-func (client *EurekaClient) AccessAppsByVip(vip string) (vipApps []*meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("AccessAppsByVip, recover error: %v", rc))
-        }
-        if err != nil {
-            client.logger.Errorf("AccessAppsByVip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            client.logger.Tracef("AccessAppsByVip, OK >>> vipApps: %v", vipApps)
-        }
-    }()
-    client.logger.Tracef("AccessAppsByVip, PARAMS >>> vip: %v", SummaryApps(vipApps))
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr()
-        default:
-            return client.discoveryClient.accessAppsByVip(vip)
-        }
-    }
-    return nil, clientNotStartedErr()
+func (client *EurekaClient) AccessAppsByVip(vip string) ([]*meta.AppInfo, error) {
+    ret, err := client.exec("AccessAppsByVip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessAppsByVip(params[0].(string))
+    }, vip)
+    return ret.([]*meta.AppInfo), err
+}
+
+// AccessAppInstanceByVip 查询指定vip的可用服务实例（随机选择）
+func (client *EurekaClient) AccessAppInstanceByVip(vip string) (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessAppInstanceByVip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessAppInstanceByVip(params[0].(string))
+    }, vip)
+    return ret.(*meta.InstanceInfo), err
 }
 
 // AccessAppsBySvip 查询指定svip的可用服务列表
-func (client *EurekaClient) AccessAppsBySvip(svip string) (svipApps []*meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("AccessAppsBySvip, recover error: %v", rc))
-        }
-        if err != nil {
-            client.logger.Errorf("AccessAppsBySvip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            client.logger.Tracef("AccessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
-        }
-    }()
-    client.logger.Tracef("AccessAppsBySvip, PARAMS >>> svip: %v", svip)
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr()
-        default:
-            return client.discoveryClient.accessAppsBySvip(svip)
-        }
-    }
-    return nil, clientNotStartedErr()
+func (client *EurekaClient) AccessAppsBySvip(svip string) ([]*meta.AppInfo, error) {
+    ret, err := client.exec("AccessAppsBySvip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessAppsBySvip(params[0].(string))
+    }, svip)
+    return ret.([]*meta.AppInfo), err
+}
+
+// AccessAppInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
+func (client *EurekaClient) AccessAppInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessAppInstanceBySvip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessAppInstanceBySvip(params[0].(string))
+    }, svip)
+    return ret.(*meta.InstanceInfo), err
 }
 
 // AccessInstancesByVip 查询指定vip的可用服务实例列表
-func (client *EurekaClient) AccessInstancesByVip(vip string) (instances []*meta.InstanceInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("AccessInstancesByVip, recover error: %v", rc))
-        }
-        if err != nil {
-            client.logger.Errorf("AccessInstancesByVip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            client.logger.Tracef("AccessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
-        }
-    }()
-    client.logger.Tracef("AccessInstancesByVip, PARAMS >>> vip: %v", vip)
-    if client.ctx != nil {
-        select {
-        case <-client.ctx.Done():
-            return nil, clientHasBeenStoppedErr()
-        default:
-            return client.discoveryClient.accessInstancesByVip(vip)
-        }
-    }
-    return nil, clientNotStartedErr()
+func (client *EurekaClient) AccessInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessInstancesByVip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessInstancesByVip(params[0].(string))
+    }, vip)
+    return ret.([]*meta.InstanceInfo), err
+}
+
+// AccessInstanceByVip 查询指定vip的可用服务实例（随机选择）
+func (client *EurekaClient) AccessInstanceByVip(vip string) (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessInstanceByVip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessInstanceByVip(params[0].(string))
+    }, vip)
+    return ret.(*meta.InstanceInfo), err
 }
 
 // AccessInstancesBySvip 查询指定svip的可用服务实例列表
-func (client *EurekaClient) AccessInstancesBySvip(svip string) (instances []*meta.InstanceInfo, err error) {
+func (client *EurekaClient) AccessInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessInstancesBySvip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessInstancesBySvip(params[0].(string))
+    }, svip)
+    return ret.([]*meta.InstanceInfo), err
+}
+
+// AccessInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
+func (client *EurekaClient) AccessInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessInstanceBySvip", func(params ...any) (any, error) {
+        return client.discoveryClient.accessInstanceBySvip(params[0].(string))
+    }, svip)
+    return ret.(*meta.InstanceInfo), err
+}
+
+// exec 处理并返回（同步检查当前客户端运行状态状态）
+func (client *EurekaClient) exec(name string, r func(params ...any) (any, error), params ...any) (ret any, err error) {
     defer func() {
         if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("AccessInstancesBySvip, recover error: %v", rc))
+            err = errors.New(fmt.Sprintf("%s, recover error: %v", name, rc))
         }
         if err != nil {
-            client.logger.Errorf("AccessInstancesBySvip, FAILED >>> error: %v", err)
+            client.logger.Errorf("%s, FAILED >>> error: %v", name, err)
         }
         if err == nil {
-            client.logger.Tracef("AccessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
+            client.logger.Tracef("%s, OK >>> ret: %v", name, ret)
         }
     }()
-    client.logger.Tracef("AccessInstancesBySvip, PARAMS >>> svip: %v", svip)
+    if len(params) > 0 {
+        sp := make([]any, 0)
+        sp = append(sp, name)
+        sl := make([]string, 0)
+        for idx, param := range params {
+            sl = append(sl, "arg"+strconv.Itoa(idx)+": %v")
+            sp = append(sp, param)
+        }
+        client.logger.Tracef("%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
+    }
     if client.ctx != nil {
         select {
         case <-client.ctx.Done():
             return nil, clientHasBeenStoppedErr()
         default:
-            return client.discoveryClient.accessInstancesBySvip(svip)
+            return r(params...)
         }
     }
     return nil, clientNotStartedErr()
