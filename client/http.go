@@ -143,16 +143,16 @@ func (client *HttpClient) Register(server *meta.EurekaServer, instance *meta.Ins
     defer func() {
         if rc := recover(); rc != nil {
             ret = &CommonResponse{}
-            ret.Error = errors.New(fmt.Sprintf("Register, recover error: %v", rc))
+            ret.Error = errors.New(fmt.Sprintf("HttpClient.Register, recover error: %v", rc))
         }
         if ret.Error != nil {
-            client.logger.Tracef("Register, FAILED >>> error: %v", ret.Error)
+            client.logger.Tracef("HttpClient.Register, FAILED >>> error: %v", ret.Error)
         }
         if ret.Error == nil {
-            client.logger.Tracef("Register, OK")
+            client.logger.Tracef("HttpClient.Register, OK")
         }
     }()
-    client.logger.Tracef("Register, PARAMS >>> server: %v, instance: %v", server, instance)
+    client.logger.Tracef("HttpClient.Register, PARAMS >>> server: %v, instance: %v", server, instance)
     if instance == nil {
         return &CommonResponse{Error: errors.New("InstanceInfo is nil")}
     }
@@ -424,7 +424,7 @@ func (client *HttpClient) getInstance(server *meta.EurekaServer, uri string) (re
             client.logger.Tracef("HttpClient.getInstance, OK >>> ret: %v", SummaryInstance(ret.Instance))
         }
     }()
-    client.logger.Tracef("getInstance, PARAMS >>> server: %v, uri: %s", server, uri)
+    client.logger.Tracef("HttpClient.getInstance, PARAMS >>> server: %v, uri: %s", server, uri)
     ret.Response = client.doRequest(200, server, "GET", uri, nil)
     if ret.Response.Error != nil {
         ret.Error = ret.Response.Error
