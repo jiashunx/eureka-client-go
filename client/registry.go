@@ -94,18 +94,6 @@ func (registry *registryClient) beat0(ctx context.Context) (response *CommonResp
 
 // unRegister 取消注册服务
 func (registry *registryClient) unRegister() (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("unRegister, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            registry.logger.Tracef("unRegister, FAILED >>> error: %v", response.Error)
-        }
-        if response.Error == nil {
-            registry.logger.Tracef("unRegister, OK")
-        }
-    }()
     client := registry.client
     server, err := client.config.GetCurrZoneEurekaServer()
     if err != nil {
@@ -118,19 +106,6 @@ func (registry *registryClient) unRegister() (response *CommonResponse) {
 
 // changeStatus 变更服务状态
 func (registry *registryClient) changeStatus(status meta.InstanceStatus) (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("changeStatus, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            registry.logger.Tracef("changeStatus, FAILED >>> error: %v", response.Error)
-        }
-        if response.Error == nil {
-            registry.logger.Tracef("changeStatus, OK")
-        }
-    }()
-    registry.logger.Tracef("changeStatus, PARAMS >>> status: %v", status)
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -156,19 +131,6 @@ func (registry *registryClient) changeStatus(status meta.InstanceStatus) (respon
 
 // changeMetadata 变更元数据
 func (registry *registryClient) changeMetadata(metadata map[string]string) (response *CommonResponse) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("changeMetadata, recover error: %v", rc))
-        }
-        if response.Error != nil {
-            registry.logger.Tracef("changeMetadata, FAILED >>> error: %v", response.Error)
-        }
-        if response.Error == nil {
-            registry.logger.Tracef("changeMetadata, OK")
-        }
-    }()
-    registry.logger.Tracef("changeMetadata, PARAMS >>> metadata: %v", metadata)
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -197,18 +159,6 @@ func (registry *registryClient) isEnabled() (bool, error) {
 
 // buildInstanceInfo 根据配置构造 *meta.InstanceInfo
 func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (instance *meta.InstanceInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("buildInstanceInfo, recover error: %v", rc))
-        }
-        if err != nil {
-            registry.logger.Tracef("buildInstanceInfo, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            registry.logger.Tracef("buildInstanceInfo, OK >>> instance: %v", instance)
-        }
-    }()
-    registry.logger.Tracef("buildInstanceInfo, PARAMS >>> status: %v, action: %v", status, action)
     config := registry.client.config
     instance = &meta.InstanceInfo{
         InstanceId:                    config.InstanceId,

@@ -99,18 +99,6 @@ func (discovery *discoveryClient) isEnabled() (bool, error) {
 
 // accessApp 查询可用服务
 func (discovery *discoveryClient) accessApp(appName string) (app *meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("accessApp, recover error: %v", rc))
-        }
-        if err != nil {
-            discovery.logger.Tracef("accessApp, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            discovery.logger.Tracef("accessApp, OK >>> app: %v", SummaryApp(app))
-        }
-    }()
-    discovery.logger.Tracef("accessApp, PARAMS >>> appName: %v", appName)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -158,18 +146,6 @@ func (discovery *discoveryClient) accessAppInstance(appName string) (*meta.Insta
 
 // accessAppsByVip 查询指定vip的可用服务列表
 func (discovery *discoveryClient) accessAppsByVip(vip string) (vipApps []*meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("accessAppsByVip, recover error: %v", rc))
-        }
-        if err != nil {
-            discovery.logger.Tracef("accessAppsByVip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            discovery.logger.Tracef("accessAppsByVip, OK >>> vipApps: %v", SummaryApps(vipApps))
-        }
-    }()
-    discovery.logger.Tracef("accessAppsByVip, PARAMS >>> vip: %v", vip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -234,18 +210,6 @@ func (discovery *discoveryClient) accessAppInstanceByVip(vip string) (*meta.Inst
 
 // accessAppsBySvip 查询指定svip的可用服务列表
 func (discovery *discoveryClient) accessAppsBySvip(svip string) (svipApps []*meta.AppInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("accessAppsBySvip, recover error: %v", rc))
-        }
-        if err != nil {
-            discovery.logger.Tracef("accessAppsBySvip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            discovery.logger.Tracef("accessAppsBySvip, OK >>> svipApps: %v", SummaryApps(svipApps))
-        }
-    }()
-    discovery.logger.Tracef("accessAppsBySvip, PARAMS >>> svip: %v", svip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -310,18 +274,6 @@ func (discovery *discoveryClient) accessAppInstanceBySvip(svip string) (*meta.In
 
 // accessInstancesByVip 查询指定vip的可用服务实例列表
 func (discovery *discoveryClient) accessInstancesByVip(vip string) (instances []*meta.InstanceInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("accessInstancesByVip, recover error: %v", rc))
-        }
-        if err != nil {
-            discovery.logger.Tracef("accessInstancesByVip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            discovery.logger.Tracef("accessInstancesByVip, OK >>> instances: %v", SummaryInstances(instances))
-        }
-    }()
-    discovery.logger.Tracef("accessInstancesByVip, PARAMS >>> vip: %v", vip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
@@ -374,18 +326,6 @@ func (discovery *discoveryClient) accessInstanceByVip(vip string) (*meta.Instanc
 
 // accessInstancesBySvip 查询指定svip的可用服务实例列表
 func (discovery *discoveryClient) accessInstancesBySvip(svip string) (instances []*meta.InstanceInfo, err error) {
-    defer func() {
-        if rc := recover(); rc != nil {
-            err = errors.New(fmt.Sprintf("accessInstancesBySvip, recover error: %v", rc))
-        }
-        if err != nil {
-            discovery.logger.Tracef("accessInstancesBySvip, FAILED >>> error: %v", err)
-        }
-        if err == nil {
-            discovery.logger.Tracef("accessInstancesBySvip, OK >>> instances: %v", SummaryInstances(instances))
-        }
-    }()
-    discovery.logger.Tracef("accessInstancesBySvip, PARAMS >>> svip: %v", svip)
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
