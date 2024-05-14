@@ -1,6 +1,7 @@
 package client
 
 import (
+    "fmt"
     "github.com/google/uuid"
     "github.com/jiashunx/eureka-client-go/log"
     "github.com/jiashunx/eureka-client-go/meta"
@@ -26,7 +27,7 @@ func TestEurekaClient_Case1(t *testing.T) {
         ClientConfig: &meta.ClientConfig{
             ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
         },
-    })
+    }, nil)
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
@@ -65,7 +66,7 @@ func TestEurekaClient_Case1(t *testing.T) {
     <-time.NewTimer(60 * time.Second).C
 
     // 创建客户端2（未开启服务注册与服务发现功能），该客户端无需手工关闭
-    client2, err := NewEurekaClient(&meta.EurekaConfig{})
+    client2, err := NewEurekaClient(&meta.EurekaConfig{}, nil)
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
@@ -113,6 +114,12 @@ func TestEurekaClient_Case2(t *testing.T) {
                 "zone1": TestEurekaServiceUrl,
                 "zone2": "",
             },
+        },
+    }, &EurekaConfigOptions{
+        HeartbeatFailFunc: func(registry *RegistryClient, response *CommonResponse) {
+            fmt.Println("心跳失败-->>")
+            fmt.Println("心跳失败-->>", response.Error.Error())
+            fmt.Println("心跳失败-->>")
         },
     })
     ast.Nilf(err, "%v", err)
@@ -176,7 +183,7 @@ func TestEurekaClient_Case3(t *testing.T) {
         ClientConfig: &meta.ClientConfig{
             ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
         },
-    })
+    }, nil)
     ast.Nilf(err, "%v", err)
 
     // 获取eureka客户端持有的RegistryClient及DiscoveryClient进行服务注册与服务发现处理

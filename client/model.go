@@ -57,3 +57,9 @@ type AppsResponse struct {
     Error      error
     Apps       []*meta.AppInfo
 }
+
+// EurekaConfigOptions eureka客户端配置冗余信息（可选）
+type EurekaConfigOptions struct {
+    // 心跳失败回调, 仅当集成到 EurekaClient 时有效
+    HeartbeatFailFunc func(*RegistryClient, *CommonResponse)
+}

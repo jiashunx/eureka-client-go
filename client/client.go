@@ -306,8 +306,8 @@ func (client *EurekaClient) SetLogger(logger log.Logger) error {
     return nil
 }
 
-// NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
-func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error) {
+// NewEurekaClient 根据 *meta.EurekaConfig 及 *EurekaConfigOptions 创建eureka客户端
+func NewEurekaClient(config *meta.EurekaConfig, options *EurekaConfigOptions) (client *EurekaClient, err error) {
     defer func() {
         if rc := recover(); rc != nil {
             err = errors.New(fmt.Sprintf("NewEurekaClient, recover error: %v", rc))
@@ -315,6 +315,9 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
     }()
     if config == nil {
         panic("EurekaConfig is nil")
+    }
+    if options == nil {
+        options = &EurekaConfigOptions{}
     }
     newConfig := &meta.EurekaConfig{
         InstanceConfig: config.InstanceConfig,
@@ -333,9 +336,10 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
         ctxCancel:  nil,
         httpClient: httpClient,
         registryClient: &RegistryClient{
-            HttpClient: httpClient,
-            Config:     newConfig,
-            Logger:     logger,
+            HttpClient:        httpClient,
+            Config:            newConfig,
+            Logger:            logger,
+            HeartbeatFailFunc: options.HeartbeatFailFunc,
         },
         discoveryClient: &DiscoveryClient{
             HttpClient: httpClient,
