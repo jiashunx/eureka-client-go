@@ -90,7 +90,7 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     return &CommonResponse{Error: nil}
 }
 
-// Stop 关闭eureka客户端
+// Stop 关闭eureka客户端（方法执行成功后才关闭）
 func (client *EurekaClient) Stop() *CommonResponse {
     ret, err := client.exec("Stop", func(params ...any) (any, error) {
         response := client.registryClient.unRegister()
@@ -104,6 +104,24 @@ func (client *EurekaClient) Stop() *CommonResponse {
         return &CommonResponse{Error: err}
     }
     return ret.(*CommonResponse)
+}
+
+// ForceStop 强行关闭eureka客户端
+func (client *EurekaClient) ForceStop() {
+    if client.ctx != nil {
+        select {
+        case <-client.ctx.Done():
+            break
+        default:
+            defer client.ctxCancel()
+            client.logger.Tracef("EurekaClient.ForceStop, try to stop eureka client")
+            response := client.registryClient.unRegister()
+            if response.Error != nil {
+                client.logger.Tracef("EurekaClient.ForceStop, failed to unRegister, error: %v", response.Error)
+            }
+        }
+    }
+    client.logger.Tracef("EurekaClient.ForceStop, OK")
 }
 
 // ChangeStatus 变更服务状态
