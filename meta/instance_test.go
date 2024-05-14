@@ -1,19 +1,19 @@
 package meta
 
 import (
-    "encoding/json"
+    "fmt"
     "github.com/stretchr/testify/assert"
     "testing"
 )
 
 func TestParseInstanceInfo(t *testing.T) {
     ast := assert.New(t)
-    var ii interface{}
-    err := json.Unmarshal([]byte(TestInstanceInfo), &ii)
-    ast.Nilf(err, "反序列化测试数据失败")
-    instance, rc := ParseInstanceInfo(ii.(map[string]interface{}))
-    ast.Nilf(rc, "解析InstanceInfo失败: %v", rc)
+    instance, rc := ParseInstanceInfo([]byte(TestInstanceInfo))
+    ast.Nilf(rc, "%v", rc)
     ast.Equal("127.0.0.1", instance.HostName)
+    ast.Equal(StatusUp, instance.Status)
+    ast.Equal(Added, instance.ActionType)
+    fmt.Printf("instance: %#v\n", instance)
 }
 
 var TestInstanceInfo = `
