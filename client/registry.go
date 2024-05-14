@@ -17,7 +17,7 @@ type RegistryClient struct {
     // 是否开启心跳, 仅当集成到 EurekaClient 时有效
     heartbeat bool
     // 心跳失败回调, 仅当集成到 EurekaClient 时有效
-    HeartbeatFailFunc func(*RegistryClient, *CommonResponse)
+    HeartbeatFailFunc func(*CommonResponse)
     // 服务实例状态, 仅当集成到 EurekaClient 时有效
     status meta.InstanceStatus
 }
@@ -81,7 +81,7 @@ func (registry *RegistryClient) beat0(ctx context.Context) (response *CommonResp
         if response.Error != nil {
             registry.Logger.Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
             if registry.HeartbeatFailFunc != nil {
-                go registry.HeartbeatFailFunc(registry, response)
+                go registry.HeartbeatFailFunc(response)
             }
         }
         if response.Error != nil {
