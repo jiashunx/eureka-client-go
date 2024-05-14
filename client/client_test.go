@@ -154,12 +154,6 @@ func TestEurekaClient_Case2(t *testing.T) {
     svipInstance, err = client.AccessInstanceBySvip("secure-ec-test2")
     ast.Nilf(err, "%v", err)
     ast.NotNilf(svipInstance, "%v", svipInstance)
-    currInstanceCache, err := client.AccessCurrInstanceCache()
-    ast.Nilf(err, "%v", err)
-    ast.NotNilf(currInstanceCache, "%v", currInstanceCache)
-    currRealTimeInstance, err := client.AccessCurrInstanceRealTime()
-    ast.Nilf(err, "%v", err)
-    ast.NotNilf(currRealTimeInstance, "%v", currRealTimeInstance)
 
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
     client.ForceStop()
@@ -237,12 +231,6 @@ func TestEurekaClient_Case3(t *testing.T) {
     svipInstance, err = discoveryClient.AccessInstanceBySvip("secure-ec-test3")
     ast.Nilf(err, "%v", err)
     ast.NotNilf(svipInstance, "%v", svipInstance)
-    currInstanceCache, err := discoveryClient.AccessCurrInstanceCache()
-    ast.Nilf(err, "%v", err)
-    ast.NotNilf(currInstanceCache, "%v", currInstanceCache)
-    currRealTimeInstance, err := discoveryClient.AccessCurrInstanceRealTime()
-    ast.Nilf(err, "%v", err)
-    ast.NotNilf(currRealTimeInstance, "%v", currRealTimeInstance)
 
     // 取消心跳
     close(ch)

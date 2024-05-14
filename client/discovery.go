@@ -14,10 +14,11 @@ import (
 
 // DiscoveryClient eureka服务发现客户端
 type DiscoveryClient struct {
-    client         *EurekaClient
-    logger         log.Logger
-    Apps           map[string][]*meta.AppInfo // zone与服务列表映射
-    cachedInstance *meta.InstanceInfo
+    HttpClient *HttpClient
+    Config     *meta.EurekaConfig
+    Logger     log.Logger
+    // zone与服务列表映射
+    Apps map[string][]*meta.AppInfo
 }
 
 // start 启动eureka服务发现客户端
@@ -28,7 +29,7 @@ func (discovery *DiscoveryClient) start(ctx context.Context) *CommonResponse {
 
 // discovery 具体服务发现处理逻辑
 func (discovery *DiscoveryClient) discovery(ctx context.Context) {
-    ticker := time.NewTicker(time.Duration(discovery.client.config.RegistryFetchIntervalSeconds) * time.Second)
+    ticker := time.NewTicker(time.Duration(discovery.Config.RegistryFetchIntervalSeconds) * time.Second)
 FL:
     for {
         select {
@@ -38,7 +39,6 @@ FL:
         default:
             if b, _ := discovery.isEnabled(); b {
                 go discovery.Discovery0()
-                go discovery.AccessCurrInstanceRealTime()
             }
         }
         <-ticker.C
@@ -52,25 +52,24 @@ func (discovery *DiscoveryClient) Discovery0() (Apps map[string][]*meta.AppInfo,
             err = errors.New(fmt.Sprintf("DiscoveryClient.Discovery0, recover error: %v", rc))
         }
         if err != nil {
-            discovery.logger.Tracef("DiscoveryClient.Discovery0, FAILED >>> error: %v", err)
+            discovery.Logger.Tracef("DiscoveryClient.Discovery0, FAILED >>> error: %v", err)
         }
     }()
-    client := discovery.client
     var servers map[string]*meta.EurekaServer
-    servers, err = client.config.GetAllZoneEurekaServers()
+    servers, err = discovery.Config.GetAllZoneEurekaServers()
     if err != nil {
         return
     }
     c := make(chan map[string][]*meta.AppInfo)
     for zone, server := range servers {
         go func(zone string, server *meta.EurekaServer) {
-            response := client.HttpClient().QueryApps(server)
+            response := discovery.HttpClient.QueryApps(server)
             if response.Error != nil {
                 c <- map[string][]*meta.AppInfo{zone: make([]*meta.AppInfo, 0)}
                 return
             }
             for _, app := range response.Apps {
-                app.Region = client.config.Region
+                app.Region = discovery.Config.Region
                 app.Zone = zone
                 for _, instance := range app.Instances {
                     instance.Region = app.Region
@@ -88,14 +87,13 @@ func (discovery *DiscoveryClient) Discovery0() (Apps map[string][]*meta.AppInfo,
     }
     close(c)
     discovery.Apps = apps
-    discovery.logger.Tracef("DiscoveryClient.Discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
+    discovery.Logger.Tracef("DiscoveryClient.Discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
     return apps, nil
 }
 
 // isEnabled 服务发现功能是否开启
 func (discovery *DiscoveryClient) isEnabled() (bool, error) {
-    client := discovery.client
-    if !*client.config.DiscoveryEnabled {
+    if !*discovery.Config.DiscoveryEnabled {
         return false, errors.New("eureka client's service discovery feature is not enabled")
     }
     return true, nil
@@ -108,10 +106,10 @@ func (discovery *DiscoveryClient) publicQuery(name string, r func(params ...any)
             err = errors.New(fmt.Sprintf("DiscoveryClient.%s, recover error: %v", name, rc))
         }
         if err != nil {
-            discovery.client.logger.Errorf("DiscoveryClient.%s, FAILED >>> error: %v", name, err)
+            discovery.Logger.Errorf("DiscoveryClient.%s, FAILED >>> error: %v", name, err)
         }
         if err == nil {
-            discovery.client.logger.Tracef("DiscoveryClient.%s, OK >>> ret: %v", name, ret)
+            discovery.Logger.Tracef("DiscoveryClient.%s, OK >>> ret: %v", name, ret)
         }
     }()
     if len(params) > 0 {
@@ -122,7 +120,7 @@ func (discovery *DiscoveryClient) publicQuery(name string, r func(params ...any)
             sl = append(sl, "arg"+strconv.Itoa(idx)+": %v")
             sp = append(sp, param)
         }
-        discovery.client.logger.Tracef("DiscoveryClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
+        discovery.Logger.Tracef("DiscoveryClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
     }
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
@@ -136,7 +134,7 @@ func (discovery *DiscoveryClient) publicQuery(name string, r func(params ...any)
 // AccessApp 查询可用服务
 func (discovery *DiscoveryClient) AccessApp(appName string) (*meta.AppInfo, error) {
     ret, err := discovery.publicQuery("AccessApp", func(params ...any) (any, error) {
-        return discovery.accessApp(discovery.Apps, params[0].(string))
+        return discovery.FilterApp(discovery.Apps, params[0].(string))
     }, appName)
     if err != nil {
         return nil, err
@@ -147,7 +145,7 @@ func (discovery *DiscoveryClient) AccessApp(appName string) (*meta.AppInfo, erro
 // AccessAppInstance 查询可用服务实例（随机选择）
 func (discovery *DiscoveryClient) AccessAppInstance(appName string) (*meta.InstanceInfo, error) {
     ret, err := discovery.publicQuery("AccessAppInstance", func(params ...any) (any, error) {
-        return discovery.accessAppInstance(discovery.Apps, params[0].(string))
+        return discovery.FilterAppInstance(discovery.Apps, params[0].(string))
     }, appName)
     if err != nil {
         return nil, err
@@ -158,7 +156,7 @@ func (discovery *DiscoveryClient) AccessAppInstance(appName string) (*meta.Insta
 // AccessAppsByVip 查询指定vip的可用服务列表
 func (discovery *DiscoveryClient) AccessAppsByVip(vip string) (vipApps []*meta.AppInfo, err error) {
     ret, err := discovery.publicQuery("AccessAppsByVip", func(params ...any) (any, error) {
-        return discovery.accessAppsByVip(discovery.Apps, params[0].(string))
+        return discovery.FilterAppsByVip(discovery.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -169,7 +167,7 @@ func (discovery *DiscoveryClient) AccessAppsByVip(vip string) (vipApps []*meta.A
 // AccessAppInstanceByVip 查询指定vip的可用服务实例（随机选择）
 func (discovery *DiscoveryClient) AccessAppInstanceByVip(vip string) (*meta.InstanceInfo, error) {
     ret, err := discovery.publicQuery("AccessAppInstanceByVip", func(params ...any) (any, error) {
-        return discovery.accessAppInstanceByVip(discovery.Apps, params[0].(string))
+        return discovery.FilterAppInstanceByVip(discovery.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -180,7 +178,7 @@ func (discovery *DiscoveryClient) AccessAppInstanceByVip(vip string) (*meta.Inst
 // AccessAppsBySvip 查询指定svip的可用服务列表
 func (discovery *DiscoveryClient) AccessAppsBySvip(svip string) (svipApps []*meta.AppInfo, err error) {
     ret, err := discovery.publicQuery("AccessAppsBySvip", func(params ...any) (any, error) {
-        return discovery.accessAppsBySvip(discovery.Apps, params[0].(string))
+        return discovery.FilterAppsBySvip(discovery.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -191,7 +189,7 @@ func (discovery *DiscoveryClient) AccessAppsBySvip(svip string) (svipApps []*met
 // AccessAppInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
 func (discovery *DiscoveryClient) AccessAppInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
     ret, err := discovery.publicQuery("AccessAppInstanceBySvip", func(params ...any) (any, error) {
-        return discovery.accessAppInstanceBySvip(discovery.Apps, params[0].(string))
+        return discovery.FilterAppInstanceBySvip(discovery.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -202,7 +200,7 @@ func (discovery *DiscoveryClient) AccessAppInstanceBySvip(svip string) (*meta.In
 // AccessInstancesByVip 查询指定vip的可用服务实例列表
 func (discovery *DiscoveryClient) AccessInstancesByVip(vip string) (instances []*meta.InstanceInfo, err error) {
     ret, err := discovery.publicQuery("AccessInstancesByVip", func(params ...any) (any, error) {
-        return discovery.accessInstancesByVip(discovery.Apps, params[0].(string))
+        return discovery.FilterInstancesByVip(discovery.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -213,7 +211,7 @@ func (discovery *DiscoveryClient) AccessInstancesByVip(vip string) (instances []
 // AccessInstanceByVip 查询指定vip的可用服务实例（随机选择）
 func (discovery *DiscoveryClient) AccessInstanceByVip(vip string) (*meta.InstanceInfo, error) {
     ret, err := discovery.publicQuery("AccessInstanceByVip", func(params ...any) (any, error) {
-        return discovery.accessInstanceByVip(discovery.Apps, params[0].(string))
+        return discovery.FilterInstanceByVip(discovery.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -224,7 +222,7 @@ func (discovery *DiscoveryClient) AccessInstanceByVip(vip string) (*meta.Instanc
 // AccessInstancesBySvip 查询指定svip的可用服务实例列表
 func (discovery *DiscoveryClient) AccessInstancesBySvip(svip string) (instances []*meta.InstanceInfo, err error) {
     ret, err := discovery.publicQuery("AccessInstancesBySvip", func(params ...any) (any, error) {
-        return discovery.accessInstancesBySvip(discovery.Apps, params[0].(string))
+        return discovery.FilterInstancesBySvip(discovery.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -235,7 +233,7 @@ func (discovery *DiscoveryClient) AccessInstancesBySvip(svip string) (instances 
 // AccessInstanceBySvip 查询指定svip的可用服务实例（随机选择）
 func (discovery *DiscoveryClient) AccessInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
     ret, err := discovery.publicQuery("AccessInstanceBySvip", func(params ...any) (any, error) {
-        return discovery.accessInstanceBySvip(discovery.Apps, params[0].(string))
+        return discovery.FilterInstanceBySvip(discovery.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -243,61 +241,14 @@ func (discovery *DiscoveryClient) AccessInstanceBySvip(svip string) (*meta.Insta
     return ret.(*meta.InstanceInfo), nil
 }
 
-// AccessCurrInstanceCache 从缓存查询当前服务实例信息
-func (discovery *DiscoveryClient) AccessCurrInstanceCache() (*meta.InstanceInfo, error) {
-    if _, err := discovery.isEnabled(); err != nil {
-        return nil, err
-    }
-    if discovery.cachedInstance == nil {
-        discovery.logger.Tracef("no cached service instance on current client, try to query from eureka server")
-        return discovery.AccessCurrInstanceRealTime()
-    }
-    return discovery.cachedInstance, nil
-}
-
-// AccessCurrInstanceRealTime 实时查询当前服务实例信息
-func (discovery *DiscoveryClient) AccessCurrInstanceRealTime() (instance *meta.InstanceInfo, err error) {
-    if _, err := discovery.isEnabled(); err != nil {
-        return nil, err
-    }
-    defer func() {
-        if err == nil {
-            discovery.cachedInstance = instance
-        }
-    }()
-    config := discovery.client.config
-    server, err := config.GetCurrZoneEurekaServer()
-    if err != nil {
-        return nil, err
-    }
-    response := discovery.client.HttpClient().QueryAppInstance(server, config.AppName, config.InstanceId)
-    if response.Error == nil {
-        return response.Instance, nil
-    }
-    servers, err := discovery.client.config.GetAllZoneEurekaServers()
-    if err != nil {
-        return nil, err
-    }
-    for zone, server := range servers {
-        if zone == config.Zone {
-            continue
-        }
-        response := discovery.client.HttpClient().QueryAppInstance(server, config.AppName, config.InstanceId)
-        if response.Error == nil {
-            return response.Instance, nil
-        }
-    }
-    return nil, errors.New("no client's service instance available on eureka server")
-}
-
-// accessApp 查询可用服务
-func (discovery *DiscoveryClient) accessApp(Apps map[string][]*meta.AppInfo, appName string) (app *meta.AppInfo, err error) {
+// FilterApp 查询可用服务
+func (discovery *DiscoveryClient) FilterApp(Apps map[string][]*meta.AppInfo, appName string) (app *meta.AppInfo, err error) {
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
-    config := discovery.client.config
-    if *config.PreferSameZoneEureka {
-        if apps, ok := Apps[config.Zone]; ok {
+    Config := discovery.Config
+    if *Config.PreferSameZoneEureka && Apps != nil {
+        if apps, ok := Apps[Config.Zone]; ok {
             app = FilterApp(apps, appName)
             instances := app.AvailableInstances()
             if instances != nil && len(instances) > 0 {
@@ -307,8 +258,10 @@ func (discovery *DiscoveryClient) accessApp(Apps map[string][]*meta.AppInfo, app
         }
     }
     anyMap := make(map[string]interface{})
-    for k, v := range Apps {
-        anyMap[k] = v
+    if Apps != nil {
+        for k, v := range Apps {
+            anyMap[k] = v
+        }
     }
     err = RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
         if v != nil {
@@ -328,23 +281,23 @@ func (discovery *DiscoveryClient) accessApp(Apps map[string][]*meta.AppInfo, app
     return app, err
 }
 
-// accessAppInstance 查询可用服务实例（随机选择）
-func (discovery *DiscoveryClient) accessAppInstance(Apps map[string][]*meta.AppInfo, appName string) (*meta.InstanceInfo, error) {
-    app, err := discovery.accessApp(Apps, appName)
+// FilterAppInstance 查询可用服务实例（随机选择）
+func (discovery *DiscoveryClient) FilterAppInstance(Apps map[string][]*meta.AppInfo, appName string) (*meta.InstanceInfo, error) {
+    app, err := discovery.FilterApp(Apps, appName)
     if err != nil {
         return nil, err
     }
     return app.Instances[rand.Intn(len(app.Instances))], nil
 }
 
-// accessAppsByVip 查询指定vip的可用服务列表
-func (discovery *DiscoveryClient) accessAppsByVip(Apps map[string][]*meta.AppInfo, vip string) (vipApps []*meta.AppInfo, err error) {
+// FilterAppsByVip 查询指定vip的可用服务列表
+func (discovery *DiscoveryClient) FilterAppsByVip(Apps map[string][]*meta.AppInfo, vip string) (vipApps []*meta.AppInfo, err error) {
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
-    config := discovery.client.config
-    if *config.PreferSameZoneEureka {
-        if apps, ok := Apps[config.Zone]; ok {
+    Config := discovery.Config
+    if *Config.PreferSameZoneEureka && Apps != nil {
+        if apps, ok := Apps[Config.Zone]; ok {
             vipApps = FilterAppsByVip(apps, vip)
             if vipApps != nil && len(vipApps) > 0 {
                 accessApps := make([]*meta.AppInfo, 0)
@@ -362,8 +315,10 @@ func (discovery *DiscoveryClient) accessAppsByVip(Apps map[string][]*meta.AppInf
         }
     }
     anyMap := make(map[string]interface{})
-    for k, v := range Apps {
-        anyMap[k] = v
+    if Apps != nil {
+        for k, v := range Apps {
+            anyMap[k] = v
+        }
     }
     err = RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
         if v != nil {
@@ -391,9 +346,9 @@ func (discovery *DiscoveryClient) accessAppsByVip(Apps map[string][]*meta.AppInf
     return vipApps, err
 }
 
-// accessAppInstanceByVip 查询指定vip的可用服务实例（随机选择）
-func (discovery *DiscoveryClient) accessAppInstanceByVip(Apps map[string][]*meta.AppInfo, vip string) (*meta.InstanceInfo, error) {
-    apps, err := discovery.accessAppsByVip(Apps, vip)
+// FilterAppInstanceByVip 查询指定vip的可用服务实例（随机选择）
+func (discovery *DiscoveryClient) FilterAppInstanceByVip(Apps map[string][]*meta.AppInfo, vip string) (*meta.InstanceInfo, error) {
+    apps, err := discovery.FilterAppsByVip(Apps, vip)
     if err != nil {
         return nil, err
     }
@@ -401,14 +356,14 @@ func (discovery *DiscoveryClient) accessAppInstanceByVip(Apps map[string][]*meta
     return app.Instances[rand.Intn(len(app.Instances))], nil
 }
 
-// accessAppsBySvip 查询指定svip的可用服务列表
-func (discovery *DiscoveryClient) accessAppsBySvip(Apps map[string][]*meta.AppInfo, svip string) (svipApps []*meta.AppInfo, err error) {
+// FilterAppsBySvip 查询指定svip的可用服务列表
+func (discovery *DiscoveryClient) FilterAppsBySvip(Apps map[string][]*meta.AppInfo, svip string) (svipApps []*meta.AppInfo, err error) {
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
-    config := discovery.client.config
-    if *config.PreferSameZoneEureka {
-        if apps, ok := Apps[config.Zone]; ok {
+    Config := discovery.Config
+    if *Config.PreferSameZoneEureka && Apps != nil {
+        if apps, ok := Apps[Config.Zone]; ok {
             svipApps = FilterAppsBySvip(apps, svip)
             if svipApps != nil && len(svipApps) > 0 {
                 accessApps := make([]*meta.AppInfo, 0)
@@ -426,8 +381,10 @@ func (discovery *DiscoveryClient) accessAppsBySvip(Apps map[string][]*meta.AppIn
         }
     }
     anyMap := make(map[string]interface{})
-    for k, v := range Apps {
-        anyMap[k] = v
+    if Apps != nil {
+        for k, v := range Apps {
+            anyMap[k] = v
+        }
     }
     err = RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
         if v != nil {
@@ -455,9 +412,9 @@ func (discovery *DiscoveryClient) accessAppsBySvip(Apps map[string][]*meta.AppIn
     return svipApps, err
 }
 
-// accessAppInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
-func (discovery *DiscoveryClient) accessAppInstanceBySvip(Apps map[string][]*meta.AppInfo, svip string) (*meta.InstanceInfo, error) {
-    apps, err := discovery.accessAppsBySvip(Apps, svip)
+// FilterAppInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
+func (discovery *DiscoveryClient) FilterAppInstanceBySvip(Apps map[string][]*meta.AppInfo, svip string) (*meta.InstanceInfo, error) {
+    apps, err := discovery.FilterAppsBySvip(Apps, svip)
     if err != nil {
         return nil, err
     }
@@ -465,14 +422,14 @@ func (discovery *DiscoveryClient) accessAppInstanceBySvip(Apps map[string][]*met
     return app.Instances[rand.Intn(len(app.Instances))], nil
 }
 
-// accessInstancesByVip 查询指定vip的可用服务实例列表
-func (discovery *DiscoveryClient) accessInstancesByVip(Apps map[string][]*meta.AppInfo, vip string) (instances []*meta.InstanceInfo, err error) {
+// FilterInstancesByVip 查询指定vip的可用服务实例列表
+func (discovery *DiscoveryClient) FilterInstancesByVip(Apps map[string][]*meta.AppInfo, vip string) (instances []*meta.InstanceInfo, err error) {
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
-    config := discovery.client.config
-    if *config.PreferSameZoneEureka {
-        if apps, ok := Apps[config.Zone]; ok {
+    Config := discovery.Config
+    if *Config.PreferSameZoneEureka && Apps != nil {
+        if apps, ok := Apps[Config.Zone]; ok {
             instances = FilterInstancesByVip(apps, vip)
             if instances != nil && len(instances) > 0 {
                 tmpApp := &meta.AppInfo{Instances: instances}
@@ -485,8 +442,10 @@ func (discovery *DiscoveryClient) accessInstancesByVip(Apps map[string][]*meta.A
         }
     }
     anyMap := make(map[string]interface{})
-    for k, v := range Apps {
-        anyMap[k] = v
+    if Apps != nil {
+        for k, v := range Apps {
+            anyMap[k] = v
+        }
     }
     err = RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
         if v != nil {
@@ -508,23 +467,23 @@ func (discovery *DiscoveryClient) accessInstancesByVip(Apps map[string][]*meta.A
     return instances, err
 }
 
-// accessInstanceByVip 查询指定vip的可用服务实例（随机选择）
-func (discovery *DiscoveryClient) accessInstanceByVip(Apps map[string][]*meta.AppInfo, vip string) (*meta.InstanceInfo, error) {
-    instances, err := discovery.accessInstancesByVip(Apps, vip)
+// FilterInstanceByVip 查询指定vip的可用服务实例（随机选择）
+func (discovery *DiscoveryClient) FilterInstanceByVip(Apps map[string][]*meta.AppInfo, vip string) (*meta.InstanceInfo, error) {
+    instances, err := discovery.FilterInstancesByVip(Apps, vip)
     if err != nil {
         return nil, err
     }
     return instances[rand.Intn(len(instances))], nil
 }
 
-// accessInstancesBySvip 查询指定svip的可用服务实例列表
-func (discovery *DiscoveryClient) accessInstancesBySvip(Apps map[string][]*meta.AppInfo, svip string) (instances []*meta.InstanceInfo, err error) {
+// FilterInstancesBySvip 查询指定svip的可用服务实例列表
+func (discovery *DiscoveryClient) FilterInstancesBySvip(Apps map[string][]*meta.AppInfo, svip string) (instances []*meta.InstanceInfo, err error) {
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err
     }
-    config := discovery.client.config
-    if *config.PreferSameZoneEureka {
-        if apps, ok := Apps[config.Zone]; ok {
+    Config := discovery.Config
+    if *Config.PreferSameZoneEureka && Apps != nil {
+        if apps, ok := Apps[Config.Zone]; ok {
             instances = FilterInstancesBySvip(apps, svip)
             if instances != nil && len(instances) > 0 {
                 tmpApp := &meta.AppInfo{Instances: instances}
@@ -537,8 +496,10 @@ func (discovery *DiscoveryClient) accessInstancesBySvip(Apps map[string][]*meta.
         }
     }
     anyMap := make(map[string]interface{})
-    for k, v := range Apps {
-        anyMap[k] = v
+    if Apps != nil {
+        for k, v := range Apps {
+            anyMap[k] = v
+        }
     }
     err = RandomLoopMap(anyMap, func(k string, v interface{}) (bool, error) {
         if v != nil {
@@ -560,9 +521,9 @@ func (discovery *DiscoveryClient) accessInstancesBySvip(Apps map[string][]*meta.
     return instances, err
 }
 
-// accessInstanceBySvip 查询指定svip的可用服务实例（随机选择）
-func (discovery *DiscoveryClient) accessInstanceBySvip(Apps map[string][]*meta.AppInfo, svip string) (*meta.InstanceInfo, error) {
-    instances, err := discovery.accessInstancesBySvip(Apps, svip)
+// FilterInstanceBySvip 查询指定svip的可用服务实例（随机选择）
+func (discovery *DiscoveryClient) FilterInstanceBySvip(Apps map[string][]*meta.AppInfo, svip string) (*meta.InstanceInfo, error) {
+    instances, err := discovery.FilterInstancesBySvip(Apps, svip)
     if err != nil {
         return nil, err
     }

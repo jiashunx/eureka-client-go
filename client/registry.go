@@ -11,10 +11,13 @@ import (
 
 // RegistryClient eureka服务注册客户端
 type RegistryClient struct {
-    client    *EurekaClient
-    logger    log.Logger
-    heartbeat bool                // 是否开启心跳
-    status    meta.InstanceStatus // 服务实例状态
+    HttpClient *HttpClient
+    Config     *meta.EurekaConfig
+    Logger     log.Logger
+    // 是否开启心跳, 仅当集成到 EurekaClient 时有效
+    heartbeat bool
+    // 服务实例状态, 仅当集成到 EurekaClient 时有效
+    status meta.InstanceStatus
 }
 
 // start 启动eureka服务注册客户端
@@ -25,15 +28,14 @@ func (registry *RegistryClient) start(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("RegistryClient.start, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("RegistryClient.start, FAILED >>> error: %v", response.Error)
+            registry.Logger.Tracef("RegistryClient.start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Tracef("RegistryClient.start, OK")
+            registry.Logger.Tracef("RegistryClient.start, OK")
         }
     }()
-    client := registry.client
     registry.status = meta.StatusStarting
-    if *client.config.InstanceEnabledOnIt {
+    if *registry.Config.InstanceEnabledOnIt {
         registry.status = meta.StatusUp
     }
     registry.heartbeat = false
@@ -41,19 +43,19 @@ func (registry *RegistryClient) start(ctx context.Context) (response *CommonResp
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    server, _ := client.config.GetCurrZoneEurekaServer()
+    server, _ := registry.Config.GetCurrZoneEurekaServer()
     instance, err := registry.buildInstanceInfo(registry.status, meta.Added)
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    response = client.HttpClient().Register(server, instance)
+    response = registry.HttpClient.Register(server, instance)
     registry.heartbeat = response.Error == nil
     return response
 }
 
 // beat 心跳处理
 func (registry *RegistryClient) beat(ctx context.Context) {
-    ticker := time.NewTicker(time.Duration(registry.client.config.LeaseRenewalIntervalInSeconds) * time.Second)
+    ticker := time.NewTicker(time.Duration(registry.Config.LeaseRenewalIntervalInSeconds) * time.Second)
 FL:
     for {
         select {
@@ -75,19 +77,18 @@ func (registry *RegistryClient) beat0(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("RegistryClient.beat0, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
+            registry.Logger.Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
-            registry.logger.Tracef("RegistryClient.beat0, OK")
+            registry.Logger.Tracef("RegistryClient.beat0, OK")
         }
     }()
-    client := registry.client
     _, err := registry.isEnabled()
     if err == nil && registry.heartbeat && registry.status == meta.StatusUp {
         var server *meta.EurekaServer
-        server, err = client.config.GetCurrZoneEurekaServer()
+        server, err = registry.Config.GetCurrZoneEurekaServer()
         if err == nil {
-            return client.HttpClient().Heartbeat(server, client.config.AppName, client.config.InstanceId)
+            return registry.HttpClient.Heartbeat(server, registry.Config.AppName, registry.Config.InstanceId)
         }
     }
     return &CommonResponse{Error: err}
@@ -98,8 +99,7 @@ func (registry *RegistryClient) Register(status meta.InstanceStatus) *CommonResp
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    client := registry.client
-    server, err := client.config.GetCurrZoneEurekaServer()
+    server, err := registry.Config.GetCurrZoneEurekaServer()
     if err != nil {
         return &CommonResponse{Error: err}
     }
@@ -107,7 +107,7 @@ func (registry *RegistryClient) Register(status meta.InstanceStatus) *CommonResp
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    return client.HttpClient().Register(server, instance)
+    return registry.HttpClient.Register(server, instance)
 }
 
 // Heartbeat 心跳
@@ -115,12 +115,11 @@ func (registry *RegistryClient) Heartbeat() *CommonResponse {
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    client := registry.client
-    server, err := client.config.GetCurrZoneEurekaServer()
+    server, err := registry.Config.GetCurrZoneEurekaServer()
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    return client.HttpClient().Heartbeat(server, client.config.AppName, client.config.InstanceId)
+    return registry.HttpClient.Heartbeat(server, registry.Config.AppName, registry.Config.InstanceId)
 }
 
 // UnRegister 取消注册服务
@@ -128,29 +127,27 @@ func (registry *RegistryClient) UnRegister() (response *CommonResponse) {
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    client := registry.client
-    server, err := client.config.GetCurrZoneEurekaServer()
+    server, err := registry.Config.GetCurrZoneEurekaServer()
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    response = client.HttpClient().UnRegister(server, client.config.AppName, client.config.InstanceId)
+    response = registry.HttpClient.UnRegister(server, registry.Config.AppName, registry.Config.InstanceId)
     registry.heartbeat = !(response.Error == nil)
     return response
 }
 
 // ChangeStatus 变更服务状态
 func (registry *RegistryClient) ChangeStatus(status meta.InstanceStatus) (response *CommonResponse) {
-    client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    server, err := client.config.GetCurrZoneEurekaServer()
+    server, err := registry.Config.GetCurrZoneEurekaServer()
     if err != nil {
         return &CommonResponse{Error: err}
     }
     switch status {
     case meta.StatusUp, meta.StatusDown, meta.StatusStarting, meta.StatusOutOfService, meta.StatusUnknown:
-        response = client.HttpClient().ChangeStatus(server, client.config.AppName, client.config.InstanceId, status)
+        response = registry.HttpClient.ChangeStatus(server, registry.Config.AppName, registry.Config.InstanceId, status)
         if response.Error != nil {
             break
         }
@@ -165,18 +162,17 @@ func (registry *RegistryClient) ChangeStatus(status meta.InstanceStatus) (respon
 
 // ChangeMetadata 变更元数据
 func (registry *RegistryClient) ChangeMetadata(metadata map[string]string) (response *CommonResponse) {
-    client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
     }
-    server, err := client.config.GetCurrZoneEurekaServer()
+    server, err := registry.Config.GetCurrZoneEurekaServer()
     if err != nil {
         return &CommonResponse{Error: err}
     }
-    response = client.HttpClient().ModifyMetadata(server, client.config.AppName, client.config.InstanceId, metadata)
+    response = registry.HttpClient.ModifyMetadata(server, registry.Config.AppName, registry.Config.InstanceId, metadata)
     if response.Error == nil {
         for key, value := range metadata {
-            client.config.Metadata[key] = value
+            registry.Config.Metadata[key] = value
         }
     }
     return response
@@ -184,8 +180,7 @@ func (registry *RegistryClient) ChangeMetadata(metadata map[string]string) (resp
 
 // isEnabled 服务注册功能是否开启
 func (registry *RegistryClient) isEnabled() (bool, error) {
-    client := registry.client
-    if !*client.config.RegistryEnabled {
+    if !*registry.Config.RegistryEnabled {
         return false, errors.New("eureka client's service registration feature is not enabled")
     }
     return true, nil
@@ -193,12 +188,12 @@ func (registry *RegistryClient) isEnabled() (bool, error) {
 
 // buildInstanceInfo 根据配置构造 *meta.InstanceInfo
 func (registry *RegistryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (instance *meta.InstanceInfo, err error) {
-    config := registry.client.config
+    Config := registry.Config
     instance = &meta.InstanceInfo{
-        InstanceId:                    config.InstanceId,
-        HostName:                      config.Hostname,
-        AppName:                       config.AppName,
-        IpAddr:                        config.IpAddress,
+        InstanceId:                    Config.InstanceId,
+        HostName:                      Config.Hostname,
+        AppName:                       Config.AppName,
+        IpAddr:                        Config.IpAddress,
         Status:                        status,
         OverriddenStatus:              meta.StatusUnknown,
         Port:                          meta.DefaultNonSecurePortWrapper(),
@@ -207,55 +202,55 @@ func (registry *RegistryClient) buildInstanceInfo(status meta.InstanceStatus, ac
         DataCenterInfo:                meta.DefaultDataCenterInfo(),
         LeaseInfo:                     meta.DefaultLeaseInfo(),
         Metadata:                      make(map[string]string),
-        HomePageUrl:                   config.HomePageUrl,
-        StatusPageUrl:                 config.StatusPageUrl,
-        HealthCheckUrl:                config.HealthCheckUrl,
-        VipAddress:                    config.VirtualHostname,
-        SecureVipAddress:              config.SecureVirtualHostname,
+        HomePageUrl:                   Config.HomePageUrl,
+        StatusPageUrl:                 Config.StatusPageUrl,
+        HealthCheckUrl:                Config.HealthCheckUrl,
+        VipAddress:                    Config.VirtualHostname,
+        SecureVipAddress:              Config.SecureVirtualHostname,
         IsCoordinatingDiscoveryServer: "false",
         LastUpdatedTimestamp:          "",
         LastDirtyTimestamp:            "",
         ActionType:                    action,
-        Region:                        config.Region,
-        Zone:                          config.Zone,
+        Region:                        Config.Region,
+        Zone:                          Config.Zone,
     }
-    if *config.PreferIpAddress {
-        instance.HostName = config.IpAddress
+    if *Config.PreferIpAddress {
+        instance.HostName = Config.IpAddress
     }
-    instance.Port.Port = config.NonSecurePort
+    instance.Port.Port = Config.NonSecurePort
     instance.Port.Enabled = meta.StrFalse
-    if *config.NonSecurePortEnabled {
+    if *Config.NonSecurePortEnabled {
         instance.Port.Enabled = meta.StrTrue
     }
-    instance.SecurePort.Port = config.SecurePort
+    instance.SecurePort.Port = Config.SecurePort
     instance.SecurePort.Enabled = meta.StrFalse
-    if *config.SecurePortEnabled {
+    if *Config.SecurePortEnabled {
         instance.SecurePort.Enabled = meta.StrTrue
     }
-    instance.LeaseInfo.RenewalIntervalInSecs = config.LeaseRenewalIntervalInSeconds
-    instance.LeaseInfo.DurationInSecs = config.LeaseExpirationDurationInSeconds
-    for k, v := range config.Metadata {
+    instance.LeaseInfo.RenewalIntervalInSecs = Config.LeaseRenewalIntervalInSeconds
+    instance.LeaseInfo.DurationInSecs = Config.LeaseExpirationDurationInSeconds
+    for k, v := range Config.Metadata {
         instance.Metadata[k] = v
     }
     httpUrl, _ := instance.HttpsServiceUrl()
     httpsUrl, _ := instance.HttpsServiceUrl()
     if instance.HomePageUrl == "" && httpUrl != "" {
-        instance.HomePageUrl = httpUrl + config.HomePageUrlPath
+        instance.HomePageUrl = httpUrl + Config.HomePageUrlPath
     }
     if instance.HomePageUrl == "" && httpsUrl != "" {
-        instance.HomePageUrl = httpsUrl + config.HomePageUrlPath
+        instance.HomePageUrl = httpsUrl + Config.HomePageUrlPath
     }
     if instance.StatusPageUrl == "" && httpUrl != "" {
-        instance.StatusPageUrl = httpUrl + config.StatusPageUrlPath
+        instance.StatusPageUrl = httpUrl + Config.StatusPageUrlPath
     }
     if instance.StatusPageUrl == "" && httpsUrl != "" {
-        instance.StatusPageUrl = httpsUrl + config.StatusPageUrlPath
+        instance.StatusPageUrl = httpsUrl + Config.StatusPageUrlPath
     }
     if instance.HealthCheckUrl == "" && httpUrl != "" {
-        instance.HealthCheckUrl = httpUrl + config.HealthCheckUrlPath
+        instance.HealthCheckUrl = httpUrl + Config.HealthCheckUrlPath
     }
     if instance.HealthCheckUrl == "" && httpsUrl != "" {
-        instance.HealthCheckUrl = httpsUrl + config.HealthCheckUrlPath
+        instance.HealthCheckUrl = httpsUrl + Config.HealthCheckUrlPath
     }
     return instance, nil
 }
