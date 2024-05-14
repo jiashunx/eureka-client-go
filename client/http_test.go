@@ -23,10 +23,10 @@ var TestHttpInstanceInfo = &meta.InstanceInfo{
     SecureVipAddress: "http-client-test-B",
 }
 
-var TestHttpClient = &HttpClient{logger: log.DefaultLogger()}
+var TestHttpClient = &HttpClient{Logger: log.DefaultLogger()}
 
 func TestHttpClient_Init(t *testing.T) {
-    TestHttpClient.logger.SetLevel(log.DebugLevel)
+    TestHttpClient.Logger.SetLevel(log.DebugLevel)
 }
 
 func TestHttpClient_Register(t *testing.T) {
