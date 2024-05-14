@@ -9,8 +9,8 @@ import (
     "time"
 )
 
-// registryClient eureka服务注册客户端
-type registryClient struct {
+// RegistryClient eureka服务注册客户端
+type RegistryClient struct {
     client    *EurekaClient
     logger    log.Logger
     heartbeat bool                // 是否开启心跳
@@ -18,17 +18,17 @@ type registryClient struct {
 }
 
 // start 启动eureka服务注册客户端
-func (registry *registryClient) start(ctx context.Context) (response *CommonResponse) {
+func (registry *RegistryClient) start(ctx context.Context) (response *CommonResponse) {
     defer func() {
         if rc := recover(); rc != nil {
             response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("registryClient.start, recover error: %v", rc))
+            response.Error = errors.New(fmt.Sprintf("RegistryClient.start, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("registryClient.start, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("RegistryClient.start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.logger.Tracef("registryClient.start, OK")
+            registry.logger.Tracef("RegistryClient.start, OK")
         }
     }()
     client := registry.client
@@ -36,6 +36,7 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
     if *client.config.InstanceEnabledOnIt {
         registry.status = meta.StatusUp
     }
+    registry.heartbeat = false
     go registry.beat(ctx)
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -51,7 +52,7 @@ func (registry *registryClient) start(ctx context.Context) (response *CommonResp
 }
 
 // beat 心跳处理
-func (registry *registryClient) beat(ctx context.Context) {
+func (registry *RegistryClient) beat(ctx context.Context) {
     ticker := time.NewTicker(time.Duration(registry.client.config.LeaseRenewalIntervalInSeconds) * time.Second)
 FL:
     for {
@@ -67,17 +68,17 @@ FL:
 }
 
 // beat 心跳处理
-func (registry *registryClient) beat0(ctx context.Context) (response *CommonResponse) {
+func (registry *RegistryClient) beat0(ctx context.Context) (response *CommonResponse) {
     defer func() {
         if rc := recover(); rc != nil {
             response = &CommonResponse{}
-            response.Error = errors.New(fmt.Sprintf("registryClient.beat0, recover error: %v", rc))
+            response.Error = errors.New(fmt.Sprintf("RegistryClient.beat0, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.logger.Tracef("registryClient.beat0, FAILED >>> error: %v", response.Error)
+            registry.logger.Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
-            registry.logger.Tracef("registryClient.beat0, OK")
+            registry.logger.Tracef("RegistryClient.beat0, OK")
         }
     }()
     client := registry.client
@@ -92,8 +93,41 @@ func (registry *registryClient) beat0(ctx context.Context) (response *CommonResp
     return &CommonResponse{Error: err}
 }
 
-// unRegister 取消注册服务
-func (registry *registryClient) unRegister() (response *CommonResponse) {
+// Register 服务注册
+func (registry *RegistryClient) Register(status meta.InstanceStatus) *CommonResponse {
+    if _, err := registry.isEnabled(); err != nil {
+        return &CommonResponse{Error: err}
+    }
+    client := registry.client
+    server, err := client.config.GetCurrZoneEurekaServer()
+    if err != nil {
+        return &CommonResponse{Error: err}
+    }
+    instance, err := registry.buildInstanceInfo(status, meta.Added)
+    if err != nil {
+        return &CommonResponse{Error: err}
+    }
+    return client.HttpClient().Register(server, instance)
+}
+
+// Heartbeat 心跳
+func (registry *RegistryClient) Heartbeat() *CommonResponse {
+    if _, err := registry.isEnabled(); err != nil {
+        return &CommonResponse{Error: err}
+    }
+    client := registry.client
+    server, err := client.config.GetCurrZoneEurekaServer()
+    if err != nil {
+        return &CommonResponse{Error: err}
+    }
+    return client.HttpClient().Heartbeat(server, client.config.AppName, client.config.InstanceId)
+}
+
+// UnRegister 取消注册服务
+func (registry *RegistryClient) UnRegister() (response *CommonResponse) {
+    if _, err := registry.isEnabled(); err != nil {
+        return &CommonResponse{Error: err}
+    }
     client := registry.client
     server, err := client.config.GetCurrZoneEurekaServer()
     if err != nil {
@@ -104,8 +138,8 @@ func (registry *registryClient) unRegister() (response *CommonResponse) {
     return response
 }
 
-// changeStatus 变更服务状态
-func (registry *registryClient) changeStatus(status meta.InstanceStatus) (response *CommonResponse) {
+// ChangeStatus 变更服务状态
+func (registry *RegistryClient) ChangeStatus(status meta.InstanceStatus) (response *CommonResponse) {
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -129,8 +163,8 @@ func (registry *registryClient) changeStatus(status meta.InstanceStatus) (respon
     return response
 }
 
-// changeMetadata 变更元数据
-func (registry *registryClient) changeMetadata(metadata map[string]string) (response *CommonResponse) {
+// ChangeMetadata 变更元数据
+func (registry *RegistryClient) ChangeMetadata(metadata map[string]string) (response *CommonResponse) {
     client := registry.client
     if _, err := registry.isEnabled(); err != nil {
         return &CommonResponse{Error: err}
@@ -149,7 +183,7 @@ func (registry *registryClient) changeMetadata(metadata map[string]string) (resp
 }
 
 // isEnabled 服务注册功能是否开启
-func (registry *registryClient) isEnabled() (bool, error) {
+func (registry *RegistryClient) isEnabled() (bool, error) {
     client := registry.client
     if !*client.config.RegistryEnabled {
         return false, errors.New("eureka client's service registration feature is not enabled")
@@ -158,7 +192,7 @@ func (registry *registryClient) isEnabled() (bool, error) {
 }
 
 // buildInstanceInfo 根据配置构造 *meta.InstanceInfo
-func (registry *registryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (instance *meta.InstanceInfo, err error) {
+func (registry *RegistryClient) buildInstanceInfo(status meta.InstanceStatus, action meta.ActionType) (instance *meta.InstanceInfo, err error) {
     config := registry.client.config
     instance = &meta.InstanceInfo{
         InstanceId:                    config.InstanceId,

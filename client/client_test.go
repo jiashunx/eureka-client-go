@@ -164,3 +164,92 @@ func TestEurekaClient_Case2(t *testing.T) {
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
     client.ForceStop()
 }
+
+// TestEurekaClient_Case3 手动进行服务注册、心跳、服务取消注册、服务发现等功能
+func TestEurekaClient_Case3(t *testing.T) {
+    ast := assert.New(t)
+
+    // 创建客户端
+    client, err := NewEurekaClient(&meta.EurekaConfig{
+        InstanceConfig: &meta.InstanceConfig{
+            AppName:               "eureka-client-test3",
+            InstanceId:            "127.0.0.1:28083",
+            NonSecurePort:         28083,
+            Hostname:              "127.0.0.1",
+            VirtualHostname:       "ec-test3",
+            SecureVirtualHostname: "secure-ec-test3",
+        },
+        ClientConfig: &meta.ClientConfig{
+            ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
+        },
+    })
+    ast.Nilf(err, "%v", err)
+
+    // 获取eureka客户端持有的RegistryClient及DiscoveryClient进行服务注册与服务发现处理
+
+    // 服务注册
+    registerClient := client.RegistryClient()
+    response := registerClient.Register(meta.StatusUp)
+    ast.Nilf(response.Error, "%v", response)
+
+    ch := make(chan int)
+    go func() {
+        for {
+            select {
+            case <-ch:
+                return
+            default:
+                <-time.NewTimer(10 * time.Second).C
+                response := registerClient.Heartbeat()
+                ast.Nilf(response.Error, "%v", response)
+            }
+        }
+    }()
+
+    <-time.NewTimer(60 * time.Second).C
+
+    // 服务发现
+    discoveryClient := client.DiscoveryClient()
+    app, err := discoveryClient.AccessApp(client.config.AppName)
+    ast.Nilf(err, "%v", err)
+    ast.NotNil(app)
+    vipApps, err := discoveryClient.AccessAppsByVip("ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(vipApps))
+    vipInstance, err := discoveryClient.AccessAppInstanceByVip("ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(vipInstance, "%v", vipInstance)
+    svipApps, err := discoveryClient.AccessAppsBySvip("secure-ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(svipApps))
+    svipInstance, err := discoveryClient.AccessAppInstanceBySvip("secure-ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(svipInstance, "%v", svipInstance)
+    vipInstances, err := discoveryClient.AccessInstancesByVip("ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(vipInstances))
+    vipInstance, err = discoveryClient.AccessInstanceByVip("ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(vipInstance, "%v", vipInstance)
+    svipInstances, err := discoveryClient.AccessInstancesBySvip("secure-ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.Equal(1, len(svipInstances))
+    svipInstance, err = discoveryClient.AccessInstanceBySvip("secure-ec-test3")
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(svipInstance, "%v", svipInstance)
+    currInstanceCache, err := discoveryClient.AccessCurrInstanceCache()
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(currInstanceCache, "%v", currInstanceCache)
+    currRealTimeInstance, err := discoveryClient.AccessCurrInstanceRealTime()
+    ast.Nilf(err, "%v", err)
+    ast.NotNilf(currRealTimeInstance, "%v", currRealTimeInstance)
+
+    // 取消心跳
+    close(ch)
+    <-time.NewTimer(10 * time.Second).C
+
+    // 取消服务注册
+    response = registerClient.UnRegister()
+    ast.Nilf(response.Error, "%v", response)
+
+}

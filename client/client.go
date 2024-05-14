@@ -31,8 +31,8 @@ type EurekaClient struct {
     rootCtx         context.Context
     ctx             context.Context
     ctxCancel       context.CancelFunc
-    registryClient  *registryClient
-    discoveryClient *discoveryClient
+    registryClient  *RegistryClient
+    discoveryClient *DiscoveryClient
     httpClient      *HttpClient
     logger          log.Logger
 }
@@ -93,7 +93,7 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
 // Stop 关闭eureka客户端（方法执行成功后才关闭）
 func (client *EurekaClient) Stop() *CommonResponse {
     ret, err := client.exec("Stop", func(params ...any) (any, error) {
-        response := client.registryClient.unRegister()
+        response := client.registryClient.UnRegister()
         if response.Error == nil {
             client.ctxCancel()
             return response, nil
@@ -115,7 +115,7 @@ func (client *EurekaClient) ForceStop() {
         default:
             defer client.ctxCancel()
             client.logger.Tracef("EurekaClient.ForceStop, try to stop eureka client")
-            response := client.registryClient.unRegister()
+            response := client.registryClient.UnRegister()
             if response.Error != nil {
                 client.logger.Tracef("EurekaClient.ForceStop, failed to unRegister, error: %v", response.Error)
             }
@@ -127,7 +127,7 @@ func (client *EurekaClient) ForceStop() {
 // ChangeStatus 变更服务状态
 func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResponse {
     ret, err := client.exec("ChangeStatus", func(params ...any) (any, error) {
-        return client.registryClient.changeStatus(params[0].(meta.InstanceStatus)), nil
+        return client.registryClient.ChangeStatus(params[0].(meta.InstanceStatus)), nil
     }, status)
     if err != nil {
         return &CommonResponse{Error: err}
@@ -138,7 +138,7 @@ func (client *EurekaClient) ChangeStatus(status meta.InstanceStatus) *CommonResp
 // ChangeMetadata 变更元数据
 func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonResponse {
     ret, err := client.exec("ChangeMetadata", func(params ...any) (any, error) {
-        return client.registryClient.changeMetadata(params[0].(map[string]string)), nil
+        return client.registryClient.ChangeMetadata(params[0].(map[string]string)), nil
     }, metadata)
     if err != nil {
         return &CommonResponse{Error: err}
@@ -149,7 +149,7 @@ func (client *EurekaClient) ChangeMetadata(metadata map[string]string) *CommonRe
 // AccessApp 查询可用服务信息
 func (client *EurekaClient) AccessApp(appName string) (*meta.AppInfo, error) {
     ret, err := client.exec("AccessApp", func(params ...any) (any, error) {
-        return client.discoveryClient.accessApp(params[0].(string))
+        return client.discoveryClient.accessApp(client.discoveryClient.Apps, params[0].(string))
     }, appName)
     if err != nil {
         return nil, err
@@ -160,7 +160,7 @@ func (client *EurekaClient) AccessApp(appName string) (*meta.AppInfo, error) {
 // AccessAppsByVip 查询指定vip的可用服务列表
 func (client *EurekaClient) AccessAppsByVip(vip string) ([]*meta.AppInfo, error) {
     ret, err := client.exec("AccessAppsByVip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessAppsByVip(params[0].(string))
+        return client.discoveryClient.accessAppsByVip(client.discoveryClient.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -171,7 +171,7 @@ func (client *EurekaClient) AccessAppsByVip(vip string) ([]*meta.AppInfo, error)
 // AccessAppInstanceByVip 查询指定vip的可用服务实例（随机选择）
 func (client *EurekaClient) AccessAppInstanceByVip(vip string) (*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessAppInstanceByVip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessAppInstanceByVip(params[0].(string))
+        return client.discoveryClient.accessAppInstanceByVip(client.discoveryClient.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -182,7 +182,7 @@ func (client *EurekaClient) AccessAppInstanceByVip(vip string) (*meta.InstanceIn
 // AccessAppsBySvip 查询指定svip的可用服务列表
 func (client *EurekaClient) AccessAppsBySvip(svip string) ([]*meta.AppInfo, error) {
     ret, err := client.exec("AccessAppsBySvip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessAppsBySvip(params[0].(string))
+        return client.discoveryClient.accessAppsBySvip(client.discoveryClient.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -193,7 +193,7 @@ func (client *EurekaClient) AccessAppsBySvip(svip string) ([]*meta.AppInfo, erro
 // AccessAppInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
 func (client *EurekaClient) AccessAppInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessAppInstanceBySvip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessAppInstanceBySvip(params[0].(string))
+        return client.discoveryClient.accessAppInstanceBySvip(client.discoveryClient.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -204,7 +204,7 @@ func (client *EurekaClient) AccessAppInstanceBySvip(svip string) (*meta.Instance
 // AccessInstancesByVip 查询指定vip的可用服务实例列表
 func (client *EurekaClient) AccessInstancesByVip(vip string) ([]*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessInstancesByVip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessInstancesByVip(params[0].(string))
+        return client.discoveryClient.accessInstancesByVip(client.discoveryClient.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -215,7 +215,7 @@ func (client *EurekaClient) AccessInstancesByVip(vip string) ([]*meta.InstanceIn
 // AccessInstanceByVip 查询指定vip的可用服务实例（随机选择）
 func (client *EurekaClient) AccessInstanceByVip(vip string) (*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessInstanceByVip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessInstanceByVip(params[0].(string))
+        return client.discoveryClient.accessInstanceByVip(client.discoveryClient.Apps, params[0].(string))
     }, vip)
     if err != nil {
         return nil, err
@@ -226,7 +226,7 @@ func (client *EurekaClient) AccessInstanceByVip(vip string) (*meta.InstanceInfo,
 // AccessInstancesBySvip 查询指定svip的可用服务实例列表
 func (client *EurekaClient) AccessInstancesBySvip(svip string) ([]*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessInstancesBySvip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessInstancesBySvip(params[0].(string))
+        return client.discoveryClient.accessInstancesBySvip(client.discoveryClient.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -237,7 +237,7 @@ func (client *EurekaClient) AccessInstancesBySvip(svip string) ([]*meta.Instance
 // AccessInstanceBySvip 查询指定svip的可用服务实例列表（随机选择）
 func (client *EurekaClient) AccessInstanceBySvip(svip string) (*meta.InstanceInfo, error) {
     ret, err := client.exec("AccessInstanceBySvip", func(params ...any) (any, error) {
-        return client.discoveryClient.accessInstanceBySvip(params[0].(string))
+        return client.discoveryClient.accessInstanceBySvip(client.discoveryClient.Apps, params[0].(string))
     }, svip)
     if err != nil {
         return nil, err
@@ -301,6 +301,16 @@ func (client *EurekaClient) exec(name string, r func(params ...any) (any, error)
     return nil, clientNotStartedErr()
 }
 
+// RegistryClient 获取与eureka通讯的 *RegistryClient
+func (client *EurekaClient) RegistryClient() *RegistryClient {
+    return client.registryClient
+}
+
+// DiscoveryClient 获取与eureka通讯的 *DiscoveryClient
+func (client *EurekaClient) DiscoveryClient() *DiscoveryClient {
+    return client.discoveryClient
+}
+
 // HttpClient 获取与eureka通讯的 *HttpClient
 func (client *EurekaClient) HttpClient() *HttpClient {
     return client.httpClient
@@ -350,8 +360,8 @@ func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error
         httpClient:      nil,
         logger:          log.DefaultLogger(),
     }
-    client.registryClient = &registryClient{client: client, logger: client.logger}
-    client.discoveryClient = &discoveryClient{client: client, logger: client.logger}
+    client.registryClient = &RegistryClient{client: client, logger: client.logger}
+    client.discoveryClient = &DiscoveryClient{client: client, logger: client.logger, Apps: make(map[string][]*meta.AppInfo)}
     client.httpClient = &HttpClient{logger: client.logger}
     return client, nil
 }
