@@ -12,9 +12,10 @@ import (
 
 // discoveryClient eureka服务发现客户端
 type discoveryClient struct {
-    client *EurekaClient
-    logger log.Logger
-    Apps   map[string][]*meta.AppInfo // zone与服务列表映射
+    client         *EurekaClient
+    logger         log.Logger
+    Apps           map[string][]*meta.AppInfo // zone与服务列表映射
+    cachedInstance *meta.InstanceInfo
 }
 
 // start 启动eureka服务发现客户端
@@ -35,6 +36,7 @@ FL:
         default:
             if b, _ := discovery.isEnabled(); b {
                 go discovery.discovery0(ctx)
+                go discovery.AccessCurrInstanceRealTime()
             }
         }
         <-ticker.C
@@ -374,4 +376,44 @@ func (discovery *discoveryClient) accessInstanceBySvip(svip string) (*meta.Insta
         return nil, err
     }
     return instances[rand.Intn(len(instances))], nil
+}
+
+// AccessCurrInstanceCache 从缓存查询当前服务实例信息
+func (discovery *discoveryClient) AccessCurrInstanceCache() (*meta.InstanceInfo, error) {
+    if discovery.cachedInstance == nil {
+        return nil, errors.New("no cached service instance on current client")
+    }
+    return discovery.cachedInstance, nil
+}
+
+// AccessCurrInstanceRealTime 实时查询当前服务实例信息
+func (discovery *discoveryClient) AccessCurrInstanceRealTime() (instance *meta.InstanceInfo, err error) {
+    defer func() {
+        if err == nil {
+            discovery.cachedInstance = instance
+        }
+    }()
+    config := discovery.client.config
+    server, err := config.GetCurrZoneEurekaServer()
+    if err != nil {
+        return nil, err
+    }
+    response := discovery.client.HttpClient().QueryAppInstance(server, config.AppName, config.InstanceId)
+    if response.Error == nil {
+        return response.Instance, nil
+    }
+    servers, err := discovery.client.config.GetAllZoneEurekaServers()
+    if err != nil {
+        return nil, err
+    }
+    for zone, server := range servers {
+        if zone == config.Zone {
+            continue
+        }
+        response := discovery.client.HttpClient().QueryAppInstance(server, config.AppName, config.InstanceId)
+        if response.Error == nil {
+            return response.Instance, nil
+        }
+    }
+    return nil, errors.New("no client's service instance available on eureka server")
 }

@@ -245,6 +245,28 @@ func (client *EurekaClient) AccessInstanceBySvip(svip string) (*meta.InstanceInf
     return ret.(*meta.InstanceInfo), nil
 }
 
+// AccessCurrInstanceCache 从缓存查询当前服务实例信息
+func (client *EurekaClient) AccessCurrInstanceCache() (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessCurrInstanceCache", func(params ...any) (any, error) {
+        return client.discoveryClient.AccessCurrInstanceCache()
+    })
+    if err != nil {
+        return nil, err
+    }
+    return ret.(*meta.InstanceInfo), nil
+}
+
+// AccessCurrInstanceRealTime 实时查询当前服务实例信息
+func (client *EurekaClient) AccessCurrInstanceRealTime() (*meta.InstanceInfo, error) {
+    ret, err := client.exec("AccessCurrInstanceRealTime", func(params ...any) (any, error) {
+        return client.discoveryClient.AccessCurrInstanceRealTime()
+    })
+    if err != nil {
+        return nil, err
+    }
+    return ret.(*meta.InstanceInfo), nil
+}
+
 // exec 处理并返回（同步检查当前客户端运行状态状态）
 func (client *EurekaClient) exec(name string, r func(params ...any) (any, error), params ...any) (ret any, err error) {
     defer func() {
