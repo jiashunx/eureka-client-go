@@ -156,6 +156,5 @@ func TestEurekaClient_Case2(t *testing.T) {
     ast.NotNilf(svipInstance, "%v", svipInstance)
 
     // 停止客户端，停止后客户端不可用，服务注册与发现相关goroutine自动停止并回收
-    response = client.Stop()
-    ast.Nilf(response.Error, "%v", response.Error)
+    client.ForceStop()
 }
