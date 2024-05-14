@@ -336,10 +336,10 @@ func NewEurekaClient(config *meta.EurekaConfig, options *EurekaConfigOptions) (c
         ctxCancel:  nil,
         httpClient: httpClient,
         registryClient: &RegistryClient{
-            HttpClient:        httpClient,
-            Config:            newConfig,
-            Logger:            logger,
-            HeartbeatFailFunc: options.HeartbeatFailFunc,
+            HttpClient:    httpClient,
+            Config:        newConfig,
+            Logger:        logger,
+            HeartbeatFunc: options.HeartbeatFunc,
         },
         discoveryClient: &DiscoveryClient{
             HttpClient: httpClient,
