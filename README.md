@@ -14,7 +14,7 @@
 - 添加依赖
 
 ```shell
-go get https://github.com/jiashunx/eureka-client-go@v1.0.0
+go get github.com/jiashunx/eureka-client-go@v1.0.0
 ```
 
 - 代码样例
