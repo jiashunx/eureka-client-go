@@ -27,7 +27,7 @@ func TestEurekaClient_Case1(t *testing.T) {
         ClientConfig: &meta.ClientConfig{
             ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
         },
-    }, nil)
+    })
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
@@ -66,7 +66,7 @@ func TestEurekaClient_Case1(t *testing.T) {
     <-time.NewTimer(60 * time.Second).C
 
     // 创建客户端2（未开启服务注册与服务发现功能），该客户端无需手工关闭
-    client2, err := NewEurekaClient(&meta.EurekaConfig{}, nil)
+    client2, err := NewEurekaClient(&meta.EurekaConfig{})
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
@@ -90,7 +90,7 @@ func TestEurekaClient_Case2(t *testing.T) {
     ast := assert.New(t)
 
     // 创建客户端
-    client, err := NewEurekaClient(&meta.EurekaConfig{
+    client, err := NewEurekaClientWithOptions(&meta.EurekaConfig{
         InstanceConfig: &meta.InstanceConfig{
             AppName:               "eureka-client-test2",
             InstanceId:            "127.0.0.1:28082",
@@ -116,10 +116,12 @@ func TestEurekaClient_Case2(t *testing.T) {
             },
         },
     }, &EurekaConfigOptions{
-        HeartbeatFailFunc: func(registry *RegistryClient, response *CommonResponse) {
-            fmt.Println("心跳失败-->>")
-            fmt.Println("心跳失败-->>", response.Error.Error())
-            fmt.Println("心跳失败-->>")
+        HeartbeatFunc: func(response *CommonResponse) {
+            if response.Error != nil {
+                fmt.Println("心跳失败-->>")
+                fmt.Println("心跳失败-->>", response.Error.Error())
+                fmt.Println("心跳失败-->>")
+            }
         },
     })
     ast.Nilf(err, "%v", err)
@@ -183,7 +185,7 @@ func TestEurekaClient_Case3(t *testing.T) {
         ClientConfig: &meta.ClientConfig{
             ServiceUrlOfDefaultZone: TestEurekaServiceUrl,
         },
-    }, nil)
+    })
     ast.Nilf(err, "%v", err)
 
     // 获取eureka客户端持有的RegistryClient及DiscoveryClient进行服务注册与服务发现处理
