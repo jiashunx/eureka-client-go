@@ -19,6 +19,7 @@ const (
 
 // LevelNames 日志级别名称
 var LevelNames = map[Level]string{
+    TraceLevel: "TRACE",
     DebugLevel: "DEBUG",
     InfoLevel:  "INFO",
     WarnLevel:  "WARN",
