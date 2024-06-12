@@ -306,6 +306,11 @@ func (client *EurekaClient) SetLogger(logger log.Logger) error {
     return nil
 }
 
+// GetLogger 获取客户端日志对象
+func (client *EurekaClient) GetLogger() log.Logger {
+    return client.logger
+}
+
 // NewEurekaClient 根据 *meta.EurekaConfig 创建eureka客户端
 func NewEurekaClient(config *meta.EurekaConfig) (client *EurekaClient, err error) {
     return NewEurekaClientWithOptions(config, nil)
