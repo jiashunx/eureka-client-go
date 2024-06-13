@@ -241,7 +241,7 @@ func (registry *RegistryClient) buildInstanceInfo(status meta.InstanceStatus, ac
     for k, v := range Config.Metadata {
         instance.Metadata[k] = v
     }
-    httpUrl, _ := instance.HttpsServiceUrl()
+    httpUrl, _ := instance.HttpServiceUrl()
     httpsUrl, _ := instance.HttpsServiceUrl()
     if instance.HomePageUrl == "" && httpUrl != "" {
         instance.HomePageUrl = httpUrl + Config.HomePageUrlPath
