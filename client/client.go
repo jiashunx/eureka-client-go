@@ -50,10 +50,10 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
             response.Error = errors.New(fmt.Sprintf("EurekaClient.StartWithCtx, recover error: %v", rc))
         }
         if response.Error != nil {
-            client.logger.Errorf("EurekaClient.StartWithCtx, FAILED >>> error: %v", response.Error)
+            client.GetLogger().Errorf("EurekaClient.StartWithCtx, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            client.logger.Tracef("EurekaClient.StartWithCtx, OK")
+            client.GetLogger().Tracef("EurekaClient.StartWithCtx, OK")
         }
     }()
     if client.config == nil {
@@ -76,13 +76,13 @@ func (client *EurekaClient) StartWithCtx(ctx context.Context) (response *CommonR
     client.ctx, client.ctxCancel = context.WithCancel(ctx)
     subCtx := context.WithValue(client.ctx, eurekaClientUUID, client.UUID)
     if response = client.registryClient.start(subCtx); response.Error != nil {
-        client.logger.Errorf("EurekaClient.StartWithCtx, failed to start registry client, try to stop eureka client")
+        client.GetLogger().Errorf("EurekaClient.StartWithCtx, failed to start registry client, try to stop eureka client")
         client.Stop()
         client.ctxCancel()
         return response
     }
     if response = client.discoveryClient.start(subCtx); response.Error != nil {
-        client.logger.Errorf("EurekaClient.StartWithCtx, failed to start discovery client, try to stop eureka client")
+        client.GetLogger().Errorf("EurekaClient.StartWithCtx, failed to start discovery client, try to stop eureka client")
         client.Stop()
         client.ctxCancel()
         return response
@@ -114,14 +114,14 @@ func (client *EurekaClient) ForceStop() {
             break
         default:
             defer client.ctxCancel()
-            client.logger.Tracef("EurekaClient.ForceStop, try to stop eureka client")
+            client.GetLogger().Tracef("EurekaClient.ForceStop, try to stop eureka client")
             response := client.registryClient.UnRegister()
             if response.Error != nil {
-                client.logger.Tracef("EurekaClient.ForceStop, failed to unRegister, error: %v", response.Error)
+                client.GetLogger().Tracef("EurekaClient.ForceStop, failed to unRegister, error: %v", response.Error)
             }
         }
     }
-    client.logger.Tracef("EurekaClient.ForceStop, OK")
+    client.GetLogger().Tracef("EurekaClient.ForceStop, OK")
 }
 
 // ChangeStatus 变更服务状态
@@ -252,10 +252,10 @@ func (client *EurekaClient) exec(name string, r func(params ...any) (any, error)
             err = errors.New(fmt.Sprintf("EurekaClient.%s, recover error: %v", name, rc))
         }
         if err != nil {
-            client.logger.Errorf("EurekaClient.%s, FAILED >>> error: %v", name, err)
+            client.GetLogger().Errorf("EurekaClient.%s, FAILED >>> error: %v", name, err)
         }
         if err == nil {
-            client.logger.Tracef("EurekaClient.%s, OK >>> ret: %v", name, ret)
+            client.GetLogger().Tracef("EurekaClient.%s, OK >>> ret: %v", name, ret)
         }
     }()
     if len(params) > 0 {
@@ -266,7 +266,7 @@ func (client *EurekaClient) exec(name string, r func(params ...any) (any, error)
             sl = append(sl, "arg"+strconv.Itoa(idx)+": %v")
             sp = append(sp, param)
         }
-        client.logger.Tracef("EurekaClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
+        client.GetLogger().Tracef("EurekaClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
     }
     if client.ctx != nil {
         select {
@@ -308,6 +308,9 @@ func (client *EurekaClient) SetLogger(logger log.Logger) error {
 
 // GetLogger 获取客户端日志对象
 func (client *EurekaClient) GetLogger() log.Logger {
+    if client.logger == nil {
+        client.logger = log.DefaultLoggerImpl
+    }
     return client.logger
 }
 
@@ -336,7 +339,7 @@ func NewEurekaClientWithOptions(config *meta.EurekaConfig, options *EurekaConfig
     if err = newConfig.Check(); err != nil {
         return nil, err
     }
-    logger := log.DefaultLogger()
+    logger := log.DefaultLoggerImpl
     httpClient := &HttpClient{Logger: logger}
     return &EurekaClient{
         UUID:       strings.ReplaceAll(uuid.New().String(), "-", ""),

@@ -21,6 +21,14 @@ type DiscoveryClient struct {
     Apps map[string][]*meta.AppInfo
 }
 
+// GetLogger 获取客户端日志对象
+func (discovery *DiscoveryClient) GetLogger() log.Logger {
+    if discovery.Logger == nil {
+        discovery.Logger = log.DefaultLoggerImpl
+    }
+    return discovery.Logger
+}
+
 // start 启动eureka服务发现客户端
 func (discovery *DiscoveryClient) start(ctx context.Context) *CommonResponse {
     go discovery.discovery(ctx)
@@ -52,7 +60,7 @@ func (discovery *DiscoveryClient) Discovery0() (Apps map[string][]*meta.AppInfo,
             err = errors.New(fmt.Sprintf("DiscoveryClient.Discovery0, recover error: %v", rc))
         }
         if err != nil {
-            discovery.Logger.Tracef("DiscoveryClient.Discovery0, FAILED >>> error: %v", err)
+            discovery.GetLogger().Tracef("DiscoveryClient.Discovery0, FAILED >>> error: %v", err)
         }
     }()
     var servers map[string]*meta.EurekaServer
@@ -87,7 +95,7 @@ func (discovery *DiscoveryClient) Discovery0() (Apps map[string][]*meta.AppInfo,
     }
     close(c)
     discovery.Apps = apps
-    discovery.Logger.Tracef("DiscoveryClient.Discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
+    discovery.GetLogger().Tracef("DiscoveryClient.Discovery0, OK >>> apps: %v", SummaryAppsMap(apps))
     return apps, nil
 }
 
@@ -106,10 +114,10 @@ func (discovery *DiscoveryClient) publicQuery(name string, r func(params ...any)
             err = errors.New(fmt.Sprintf("DiscoveryClient.%s, recover error: %v", name, rc))
         }
         if err != nil {
-            discovery.Logger.Errorf("DiscoveryClient.%s, FAILED >>> error: %v", name, err)
+            discovery.GetLogger().Errorf("DiscoveryClient.%s, FAILED >>> error: %v", name, err)
         }
         if err == nil {
-            discovery.Logger.Tracef("DiscoveryClient.%s, OK >>> ret: %v", name, ret)
+            discovery.GetLogger().Tracef("DiscoveryClient.%s, OK >>> ret: %v", name, ret)
         }
     }()
     if len(params) > 0 {
@@ -120,7 +128,7 @@ func (discovery *DiscoveryClient) publicQuery(name string, r func(params ...any)
             sl = append(sl, "arg"+strconv.Itoa(idx)+": %v")
             sp = append(sp, param)
         }
-        discovery.Logger.Tracef("DiscoveryClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
+        discovery.GetLogger().Tracef("DiscoveryClient.%s, PARAMS >>> "+strings.Join(sl, ", "), sp...)
     }
     if _, err = discovery.isEnabled(); err != nil {
         return nil, err

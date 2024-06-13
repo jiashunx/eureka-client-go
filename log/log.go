@@ -159,9 +159,12 @@ func (logger *loggerImpl) printf(level Level, format string, a ...any) {
 }
 
 // DefaultLogger 获取默认日志对象
-var DefaultLogger = func() Logger {
+func DefaultLogger() Logger {
     return &loggerImpl{
         level:      InfoLevel,
         defaultLog: stdLog.New(os.Stdout, "", stdLog.Ldate|stdLog.Ltime|stdLog.Lmicroseconds),
     }
 }
+
+// DefaultLoggerImpl 默认日志实现
+var DefaultLoggerImpl = DefaultLogger()

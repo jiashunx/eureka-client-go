@@ -22,6 +22,14 @@ type RegistryClient struct {
     status meta.InstanceStatus
 }
 
+// GetLogger 获取客户端日志对象
+func (registry *RegistryClient) GetLogger() log.Logger {
+    if registry.Logger == nil {
+        registry.Logger = log.DefaultLoggerImpl
+    }
+    return registry.Logger
+}
+
 // start 启动eureka服务注册客户端
 func (registry *RegistryClient) start(ctx context.Context) (response *CommonResponse) {
     defer func() {
@@ -30,10 +38,10 @@ func (registry *RegistryClient) start(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("RegistryClient.start, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.Logger.Tracef("RegistryClient.start, FAILED >>> error: %v", response.Error)
+            registry.GetLogger().Tracef("RegistryClient.start, FAILED >>> error: %v", response.Error)
         }
         if response.Error == nil {
-            registry.Logger.Tracef("RegistryClient.start, OK")
+            registry.GetLogger().Tracef("RegistryClient.start, OK")
         }
     }()
     registry.status = meta.StatusStarting
@@ -79,10 +87,10 @@ func (registry *RegistryClient) beat0(ctx context.Context) (response *CommonResp
             response.Error = errors.New(fmt.Sprintf("RegistryClient.beat0, recover error: %v", rc))
         }
         if response.Error != nil {
-            registry.Logger.Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
+            registry.GetLogger().Tracef("RegistryClient.beat0, FAILED >>> error: %v", response.Error)
         }
         if response.Error != nil {
-            registry.Logger.Tracef("RegistryClient.beat0, OK")
+            registry.GetLogger().Tracef("RegistryClient.beat0, OK")
         }
         if registry.HeartbeatFunc != nil {
             go registry.HeartbeatFunc(response)
