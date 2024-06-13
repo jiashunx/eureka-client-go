@@ -3,7 +3,7 @@
 
 - 实现功能
 
-   - 封装与Eureka Server通讯的Http Api: [HttpClient](./client/http.go)
+   - 封装与Eureka Server通讯的Http API: [HttpClient](./client/http.go)
 
    - 封装服务注册客户端：[RegistryClient](./client/registry.go)
 
@@ -14,7 +14,7 @@
 - 添加依赖
 
 ```shell
-go get github.com/jiashunx/eureka-client-go@v1.0.0
+go get github.com/jiashunx/eureka-client-go@v1.0.1
 ```
 
 - 代码样例
