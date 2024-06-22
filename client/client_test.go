@@ -31,7 +31,7 @@ func TestEurekaClient_Case1(t *testing.T) {
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
-    client1.GetLogger().SetLevel(log.TraceLevel)
+    client1.GetLogger().SetLevel(log.InfoLevel)
 
     // 启动客户端1
     response1 := client1.Start()
@@ -70,7 +70,7 @@ func TestEurekaClient_Case1(t *testing.T) {
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
-    client2.GetLogger().SetLevel(log.TraceLevel)
+    client2.GetLogger().SetLevel(log.InfoLevel)
 
     // 从客户端2获取与eureka server通讯的http客户端
     httpClient2 := client2.HttpClient()
@@ -127,7 +127,7 @@ func TestEurekaClient_Case2(t *testing.T) {
     ast.Nilf(err, "%v", err)
 
     // 更新日志级别
-    client.GetLogger().SetLevel(log.TraceLevel)
+    client.GetLogger().SetLevel(log.InfoLevel)
 
     // 启动客户端（指定了 InstanceEnabledOnIt 参数，默认注册时服务实例状态为UP）
     response := client.Start()

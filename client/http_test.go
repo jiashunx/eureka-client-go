@@ -26,7 +26,7 @@ var TestHttpInstanceInfo = &meta.InstanceInfo{
 var TestHttpClient = &HttpClient{}
 
 func TestHttpClient_Init(t *testing.T) {
-    TestHttpClient.GetLogger().SetLevel(log.TraceLevel)
+    TestHttpClient.GetLogger().SetLevel(log.InfoLevel)
 }
 
 func TestHttpClient_Register(t *testing.T) {
