@@ -50,7 +50,7 @@ type loggerImpl struct {
 // SetLevel 设置日志级别
 func (logger *loggerImpl) SetLevel(level Level) {
     i := int8(level)
-    if i >= int8(TraceLevel) && i <= int8(TraceLevel) {
+    if i >= int8(TraceLevel) && i <= int8(ErrorLevel) {
         logger.level = Level(i)
     }
 }
